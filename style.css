@@ -1,0 +1,124 @@
+@media (max-width: 499px) {
+
+  :root {
+    --tile-background: #ffffff;
+    --color-one: #e74a4a;
+    --color-two: #129733;
+    --color-three: #9a67e9;
+    --border-one: #372b07;
+    --border-two: #69520c;
+    --border-three: #a17e13;
+    --tile-width: 50px;
+    --tile-height: calc(var(--tile-width) * 2);
+    --shape-width: calc(var(--tile-width) * 0.7);
+  }
+
+  html {
+    box-sizing: border-box;
+    height: 100%;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: inherit;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-size: 16px;
+    height: 100%;
+  }
+
+  #main-container {
+    width: 260px;
+    height: 100%;
+    /*     background: lightgoldenrodyellow; */
+    display: flex;
+    flex-direction: column;
+    margin: 0 auto;
+  }
+
+  #header {
+    width: 100%;
+  }
+
+  h1 {
+    font-family: Orbitron;
+    font-size: 2rem;
+    color: black;
+    padding: 6px 6px 6px 20px;
+    border-bottom: 1px solid black;
+  }
+
+  .row-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: 1fr;
+    grid-column-gap: 10px;
+    grid-row-gap: 0px;
+    /*     background: lightgreen; */
+    /*     margin-bottom: 4px; */
+    padding: 10px;
+  }
+
+  .tile {
+    display: flex;
+    flex-direction: column;
+    justify-content:space-around;
+    justify-items:center ;
+    align-items: center;
+    width: var(--tile-width);
+    height: var(--tile-height);
+    /* aspect-ratio: 1/2; */
+    border: 1px solid var(--border-one);
+    border-radius: 8px;
+    box-shadow: 2px 2px 0px 0px var(--border-two), 4px 4px 0px 0px var(--border-three);
+  }
+}
+
+svg .color-one {
+  fill: var(--color-one);
+}
+
+svg .color-two {
+  fill: var(--color-two);
+}
+
+svg .color-three {
+  fill: var(--color-three);
+}
+
+svg .white {
+  fill: white;
+}
+
+/* .tile>.color-one {
+  background: var(--color-one);
+}
+
+.tile>.color-two {
+  background: var(--color-two);
+}
+
+.tile>.color-three {
+  background: var(--color-three);
+} */
+
+/* .tile>.shape-one {
+  width: var(--shape-width);
+  height: 20px;
+}
+
+.tile>.shape-two {
+  width: var(--shape-width);
+  height: 20px;
+  border-radius: 50%;
+}
+
+.tile>.shape-three {
+  width: 40px;
+  height: 20px;
+}
+
