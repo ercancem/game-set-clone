@@ -189,7 +189,7 @@ function toBase(base, num) {
 
 const zip = (arr, ...arrs) => {
     return arr.map((val, i) => arrs.reduce((a, arr) => [...a, arr[i]], [val]));
-  }
+}
 
 
 
@@ -229,40 +229,53 @@ function checkSet(arr) {
     // zipped either contains three same elements, or three distinct
     // elements.
     return zip(arr[0], arr[1], arr[2])
-                // Convert each element, which is an Array
-                // to a Set, thus eliminate duplicates.
-                .map(array => new Set(array))
-                // Now; if the set size is 1, then all the elements
-                // have the same values for that property; if the size
-                //  is three, then all the elements have distinct values
-                // for that property. Thus, if have no array with size 2,
-                // we have a Set.
-                .map(set => set.size)
-                .every(size => size != 2);
+        // Convert each element, which is an Array
+        // to a Set, thus eliminate duplicates.
+        .map(array => new Set(array))
+        // Now; if the set size is 1, then all the elements
+        // have the same values for that property; if the size
+        // is three, then all the elements have distinct values
+        // for that property. Thus, if have no array with size 2,
+        // we have a Set.
+        .map(set => set.size)
+        .every(size => size != 2);
 }
-
-
-// const g = some(number => number == 0);
-// console.log(g);
 
 console.log(checkSet(testArray));
 
 // https://stackoverflow.com/q/43241174/1085805
 // https://stackoverflow.com/a/74115113/1085805
-function combinations(arr, k, prefix=[]) {
+function combinations(arr, k, prefix = []) {
     if (k == 0) return [prefix];
     return arr.flatMap((v, i) =>
-        combinations(arr.slice(i+1), k-1, [...prefix, v])
+        combinations(arr.slice(i + 1), k - 1, [...prefix, v])
     );
 }
 
-const h = combinations(tilesOnBoard, 3);
 
-console.log(h.filter((subArray, index) => checkSet(subArray)));
+function getSet() {
+    // TODO: It is possible that the 12 tiles do not contain a set
+    // Thus we need to do domething for those cases
+    // If nothing else, so that getSet() does not crash!
 
-// console.log(h);
+    const h = combinations(tilesOnBoard, 3);
+    const arrayOfSets = h.filter(subArray => checkSet(subArray));
+    const r = Math.floor(Math.random() * arrayOfSets.length);
+    const tilesOnBoardAsStrings = tilesOnBoard.map(array => array.join(""));
+    const indexArray = []
+
+    arrayOfSets[r].forEach(arr => {
+        for (let i = 0; i < tilesOnBoardAsStrings.length; i++) {
+            if (arr.join("") === tilesOnBoardAsStrings[i]) {
+                indexArray.push(i)
+            }
+        }
+    });
+    return indexArray
+}
 
 
+console.log(getSet());
 
 
 
