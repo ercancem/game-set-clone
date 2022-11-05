@@ -1,6 +1,7 @@
 @media (max-width: 499px) {
 
   :root {
+    --unit: 24px;
     --tile-background: #ffffff;
     --color-one: #e74a4a;
     --color-two: #129733;
@@ -8,9 +9,10 @@
     --border-one: #372b07;
     --border-two: #69520c;
     --border-three: #a17e13;
-    --tile-width: 50px;
-    --tile-height: calc(var(--tile-width) * 2);
-    --shape-width: calc(var(--tile-width) * 0.7);
+    --tile-width: calc(var(--unit) * 2);
+    --tile-height: calc(var(--unit) * 5);
+    --tile-container-height: calc(var(--unit) * 4);
+    /* --shape-width: calc(var(--tile-width) * 0.7); */
   }
 
   html {
@@ -32,41 +34,77 @@
   }
 
   #main-container {
-    width: 260px;
+    width: 100%;
     height: 100%;
     /*     background: lightgoldenrodyellow; */
     display: flex;
     flex-direction: column;
+
+  }
+
+  #board {
+    width: calc(var(--tile-width) * 5.5);
     margin: 0 auto;
   }
 
   #header {
     width: 100%;
+    background: lightgray;
+    padding: 20px 10px;
   }
 
   h1 {
     font-family: Orbitron;
     font-size: 2rem;
     color: black;
-    padding: 6px 6px 6px 20px;
-    border-bottom: 1px solid black;
+    /* padding: 6px 6px 6px 20px; */
+    /* border-bottom: 1px solid black; */
+    text-transform: uppercase;
+  }
+
+  h1 span:nth-child(1) {
+    border: 2px solid var(--color-one);
+    color: var(--color-one);
+    padding: 4px;
+    border-radius: 4px;
+    margin-right: 6px;
+  }
+
+  h1 span:nth-child(2) {
+    border: 2px solid var(--color-two);
+    color: var(--color-two);
+    padding: 4px;
+    border-radius: 4px;
+    margin-right: 6px;
+  }
+
+  h1 span:nth-child(3) {
+    border: 2px solid var(--color-three);
+    color: var(--color-three);
+    padding: 4px;
+    border-radius: 4px;
+    margin-right: 6px;
   }
 
   .row-container {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: 1fr;
-    grid-column-gap: 10px;
+    grid-column-gap: var(--unit);
     grid-row-gap: 0px;
     /*     background: lightgreen; */
     /*     margin-bottom: 4px; */
     padding: 10px;
   }
 
+  .tileContainer {
+    height: var(--tile-container-height);
+  }
+
   .tile {
     display: flex;
     flex-direction: column;
-    justify-content:space-around;
+    justify-content:space-evenly;
     justify-items:center ;
     align-items: center;
     width: var(--tile-width);
