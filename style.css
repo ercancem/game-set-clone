@@ -8,6 +8,28 @@
     --color-three-hs: 240 100%;
     --color-pink: hsl(300, 100%, 50%);
     --color-blue: hsl(190, 100%, 40%);
+    --color-gray-90: hsl(0, 0%, 90%);
+    --color-gray-80: hsl(0, 0%, 80%);
+    --color-gray-70: hsl(0, 0%, 70%);
+    --color-gray-60: hsl(0, 0%, 60%);
+    --color-gray-50: hsl(0, 0%, 50%);
+    --color-gray-40: hsl(0, 0%, 40%);
+    --color-gray-30: hsl(0, 0%, 30%);
+    --color-gray-20: hsl(0, 0%, 20%);
+    --color-red-60: hsl(5, 80%, 60%);
+    --color-red-80: hsl(5, 80%, 80%);
+    --color-red-90: hsl(5, 80%, 90%);
+    --color-red-40: hsl(5, 80%, 40%);
+    --color-red-30: hsl(5, 80%, 30%);
+    --color-teal-40: hsl(190, 70%, 40%);
+    --color-teal-20: hsl(190, 70%, 20%);
+    --color-teal-60: hsl(190, 70%, 60%);
+    --color-teal-90: hsl(190, 70%, 90%);
+    --color-purple-50: hsl(260, 90%, 50%);
+    --color-purple-70: hsl(260, 90%, 70%);
+    --color-purple-90: hsl(260, 90%, 90%);
+    --color-purple-80: hsl(260, 90%, 80%);
+    --color-purple-30: hsl(260, 90%, 30%);
     /* --color-one: hsl(0, 77%, 60%);
     --color-one-light: hsl(0, 77%, 90%);
     --color-two: hsl(135, 79%, 33%);
@@ -72,24 +94,24 @@
   }
 
   h1 span:nth-child(1) {
-    border: 2px solid var(--color-one);
-    color: var(--color-one);
+    border: 2px solid var(--color-red-60);
+    color: var(--color-red-60);
     padding: 4px;
     border-radius: 4px;
     margin-right: 6px;
   }
 
   h1 span:nth-child(2) {
-    border: 2px solid var(--color-two);
-    color: var(--color-two);
+    border: 2px solid var(--color-teal-40);
+    color: var(--color-teal-40);
     padding: 4px;
     border-radius: 4px;
     margin-right: 6px;
   }
 
   h1 span:nth-child(3) {
-    border: 2px solid var(--color-three);
-    color: var(--color-three);
+    border: 2px solid var(--color-purple-50);
+    color: var(--color-purple-50);
     padding: 4px;
     border-radius: 4px;
     margin-right: 6px;
@@ -117,31 +139,48 @@
     width: var(--tile-width);
     height: var(--tile-height);
     /* aspect-ratio: 1/2; */
-    border: 1px solid var(--border-one);
+    background-color: var(--color-gray-90);
+    border: 1px solid var(--color-gray-70);
     border-radius: 8px;
     /* border-image: linear-gradient(blue, red); */
-    box-shadow: 3px 3px 0px 0px var(--color-blue), 6px 6px 0px 0px var(--color-pink);
+    box-shadow: 3px 3px 0px 0px var(--color-gray-60), 6px 6px 0px 0px var(--color-gray-40);
   }
 }
 
-[data-state="selected"] {
-  background-color: lightpink;
+[data-state="selected"].color-one {
+  background-color: var(--color-red-90);
+}
+
+[data-state="selected"].color-two {
+  background-color: var(--color-teal-90);
+}
+
+[data-state="selected"].color-three {
+  background-color: var(--color-purple-90);
 }
 
 svg .color-one {
-  fill: hsl(var(--color-one-hs) 50%);
+  fill: var(--color-red-60);
 }
 
 svg .color-two {
-  fill: hsl(var(--color-two-hs) 50%);
+  fill: var(--color-teal-40);
 }
 
 svg .color-three {
-  fill: hsl(var(--color-three-hs) 50%);
+  fill: var(--color-purple-50);
 }
 
-svg .white {
-  fill: white;
+svg .white.color-one {
+  fill: var(--color-red-90);
+}
+
+svg .white.color-two {
+  fill: var(--color-teal-90);
+}
+
+svg .white.color-three {
+  fill: var(--color-purple-90);
 }
 
 /* .tile>.color-one {

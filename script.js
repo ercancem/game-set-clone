@@ -33,6 +33,7 @@ function renderCircle(node, radius = UNIT, color, fill) {
         circle2.setAttribute('cy', 30);
         circle2.setAttribute('r', 20);
         circle2.classList.add("white");
+        circle2.classList.add(color);
         circle2.setAttribute('stroke', 'none');
         svg.appendChild(circle2);
     }
@@ -74,6 +75,7 @@ function renderSquare(node, side = UNIT, color, fill) {
         rect2.setAttribute('width', 40);
         rect2.setAttribute('height', 40);
         rect2.classList.add("white");
+        rect2.classList.add(color);
         rect2.setAttribute('stroke', 'none');
         svg.appendChild(rect2);
     }
@@ -110,6 +112,7 @@ function renderDiamond(node, side = UNIT, color, fill) {
     if (fill > 0) {
         path2.setAttribute('d', 'm10 30 20-20 20 20-20 20Z');
         path2.classList.add("white");
+        path2.classList.add(color);
         path2.setAttribute('stroke', 'none');
         svg.appendChild(path2);
     }
@@ -378,6 +381,7 @@ function createDomElements() {
     createHeader();
     createBoard();
     createTiles();
+    createFooter();
 }
 
 
@@ -445,4 +449,33 @@ function createTiles() {
             tileContainer.append(rowElement);
         }
     }
+}
+
+function createFooter() {
+    const footer = document.createElement("div");
+    footer.setAttribute("id", "footer");
+    document.getElementById("main-container").append(footer);
+
+    const button = document.createElement("button");
+    button.setAttribute("id", "set-button");
+    button.classList.add("footer")
+    button.textContent = "Set";
+    footer.append(button);
+
+    const scoreboard = document.createElement("div");
+    scoreboard.setAttribute("id", "scoreboard");
+    scoreboard.classList.add("footer");
+    footer.append(scoreboard);
+
+    const scoreLabel = document.createElement("div");
+    scoreLabel.setAttribute("id", "score-label");
+    scoreLabel.classList.add("scoreboard");
+    scoreLabel.textContent = "Score:";
+    scoreboard.append(scoreLabel);
+
+    const score =  document.createElement("div");
+    score.setAttribute("id", "score");
+    score.classList.add("score");
+    score.textContent = "0";
+    scoreboard.append(score);
 }
