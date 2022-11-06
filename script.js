@@ -145,6 +145,7 @@ shuffleArray(tileSet);
 function tileDecorator(tileId, tileArray) {
     for (let i = 0; i <= tileArray[2]; i++) {
         const tilePos = document.getElementById("tile-no-" + tileId);
+        tilePos.classList.add(COLORS[tileArray[0]]);
         let shape = document.createElement("div");
         if (tileArray[3] === 0) {
             renderCircle(shape, 12, COLORS[tileArray[0]], tileArray[1]);
@@ -171,10 +172,12 @@ function tileBuilder() {
         tilesOnBoard.push(newTile);
         tileDecorator(i, newTile);
     }
-    // console.log(tilesOnBoard);
 }
 
-
+// TODO: Study and see how the following works.
+// https://stackoverflow.com/a/67473632/1085805
+// toBase(2, 13) // [1, 1, 0, 1]
+// toBase(3, 5) // [0, 0, 1, 2]
 function toBase(base, num) {
     const largest_power = ~~(Math.log(num) / Math.log(base));
     const result = [0, 0, 0, 0];
@@ -187,28 +190,114 @@ function toBase(base, num) {
     return result;
 }
 
+// TODO: I don't understand how the following works
+// https://gist.github.com/renaudtertrais/25fc5a2e64fe5d0e86894094c6989e10
 const zip = (arr, ...arrs) => {
     return arr.map((val, i) => arrs.reduce((a, arr) => [...a, arr[i]], [val]));
 }
 
+Array.prototype.random = function () {
+    return this[Math.floor(Math.random() * this.length)];
+}
+
+// https://stackoverflow.com/a/14853974/1085805
+Array.prototype.equals = function (array) {
+    // if the other array is a falsy value, return
+    if (!array)
+        return false;
+    // if the argument is the same array, we can be sure the contents are same as well
+    if (array === this)
+        return true;
+    // compare lengths - can save a lot of time
+    if (this.length != array.length)
+        return false;
+
+    for (var i = 0, l = this.length; i < l; i++) {
+        // Check if we have nested arrays
+        if (this[i] instanceof Array && array[i] instanceof Array) {
+            // recurse into the nested arrays
+            if (!this[i].equals(array[i]))
+                return false;
+        }
+        else if (this[i] != array[i]) {
+            // Warning - two different object instances will never be equal: {x:20} != {x:20}
+            return false;
+        }
+    }
+    return true;
+}
+
+// function toggleTileDataState(tile) {
+//     if (tile.target.dataset.state)
+// }
 
 
+function activateTiles() {
+    const tiles = Array.from(document.getElementsByClassName("tile"));
+    tiles.forEach(tile => {
+        tile.addEventListener(
+            "click",
+            (event) => {
+                if (event.target.dataset.state === "selected") {
+                    event.target.dataset.state = "idle"
+                } else {
+                    event.target.dataset.state = "selected"
+                }
+            }
+        )
+    }
+    )
+}
 
+// this.keyboard = document.getElementById("onscreen-keyboard");
 
-// toBase(2, 13) // [1, 1, 0, 1]
-// toBase(3, 5) // [0, 0, 1, 2]
+// activateOnscreenKeyboard() {
+//     this.keyboard.addEventListener(
+//         "click",
+//         (event) => {
+//             if (event.target.className === "keyboard-button") {
+//                 let key = event.target.dataset.key;
+//                 handleMouseClick(key);
+//             }
+//         },
+//         {
+//             signal: this.onscreenKeyboardSwitch.signal,
+//         }
+//     );
+// }
 
+// this.onscreenKeyboardSwitch = new AbortController();
 
+// deactivateOnscreenKeyboard() {
+//     this.onscreenKeyboardSwitch.abort();
+// }
 
-// console.log(tileSet[5]);
-
-
-
-
-//The following builds all the necessary HTML elements.
+// function handleMouseClick(e) {
+//     if (e === "delete") {
+//         game.pointer.doBackspace();
+//         document.activeElement.blur(); //important
+//         return;
+//     } else if (e === "enter") {
+//         game.guess.handleSubmission();
+//         document.activeElement.blur();
+//         return;
+//     } else if (e === "ai") {
+//         document.activeElement.blur();
+//         processMessageBox("Try: " + game.suggestionAi.suggestion.toUpperCase());
+//         setMessageBoxTimer();
+//     }
+//     else {
+//         animateLetterInputEffect();
+//         game.pointer.writeContent(e);
+//         document.activeElement.blur();
+//         return;
+//     }
+// }
 
 createDomElements();
+activateTiles();
 tileBuilder();
+
 
 const testArray = [[1, 0, 0, 1], [2, 1, 2, 0], [0, 2, 1, 1]]
 
@@ -245,6 +334,7 @@ console.log(checkSet(testArray));
 
 // https://stackoverflow.com/q/43241174/1085805
 // https://stackoverflow.com/a/74115113/1085805
+// TODO: Right now, I don't understand how the following works.
 function combinations(arr, k, prefix = []) {
     if (k == 0) return [prefix];
     return arr.flatMap((v, i) =>
@@ -345,11 +435,13 @@ function createTiles() {
         for (let clmIndex = 0; clmIndex < 4; clmIndex++) {
             const tileContainer = document.createElement("div");
             tileContainer.classList.add("tile-container");
+
             tileRow.append(tileContainer);
             let rowElement = document.createElement("div");
             rowElement.setAttribute("id", "tile-no-" + tileCounter);
             tileCounter++;
             rowElement.classList.add("tile");
+            rowElement.dataset.state = "idle";
             tileContainer.append(rowElement);
         }
     }

@@ -1,14 +1,23 @@
-@media (max-width: 499px) {
+@media (max-width: 4000px) {
 
   :root {
     --unit: 24px;
     --tile-background: #ffffff;
-    --color-one: #e74a4a;
-    --color-two: #129733;
-    --color-three: #9a67e9;
-    --border-one: #372b07;
-    --border-two: #69520c;
-    --border-three: #a17e13;
+    --color-one-hs: 0 100%;
+    --color-two-hs: 120 50%;
+    --color-three-hs: 240 100%;
+    --color-pink: hsl(300, 100%, 50%);
+    --color-blue: hsl(190, 100%, 40%);
+    /* --color-one: hsl(0, 77%, 60%);
+    --color-one-light: hsl(0, 77%, 90%);
+    --color-two: hsl(135, 79%, 33%);
+    --color-two-light: hsl(135, 79%, 90%);
+    --color-three: hsl(264, 75%, 66%);
+    --color-three: hsl(264, 75%, 66%); */
+    --tile-boder-hs: 30 50%;
+    --border-one: hsl(45, 79%, 15%);
+    --border-two: hsl(45, 79%, 25%);
+    --border-three: hsl(45, 79%, 35%);
     --tile-width: calc(var(--unit) * 2);
     --tile-height: calc(var(--unit) * 5);
     --tile-container-height: calc(var(--unit) * 4);
@@ -97,11 +106,9 @@
     padding: 10px;
   }
 
-  .tileContainer {
-    height: var(--tile-container-height);
-  }
 
   .tile {
+    /* background-color: lightsalmon; */
     display: flex;
     flex-direction: column;
     justify-content:space-evenly;
@@ -112,20 +119,25 @@
     /* aspect-ratio: 1/2; */
     border: 1px solid var(--border-one);
     border-radius: 8px;
-    box-shadow: 2px 2px 0px 0px var(--border-two), 4px 4px 0px 0px var(--border-three);
+    /* border-image: linear-gradient(blue, red); */
+    box-shadow: 3px 3px 0px 0px var(--color-blue), 6px 6px 0px 0px var(--color-pink);
   }
 }
 
+[data-state="selected"] {
+  background-color: lightpink;
+}
+
 svg .color-one {
-  fill: var(--color-one);
+  fill: hsl(var(--color-one-hs) 50%);
 }
 
 svg .color-two {
-  fill: var(--color-two);
+  fill: hsl(var(--color-two-hs) 50%);
 }
 
 svg .color-three {
-  fill: var(--color-three);
+  fill: hsl(var(--color-three-hs) 50%);
 }
 
 svg .white {
