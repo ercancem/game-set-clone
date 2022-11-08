@@ -1,181 +1,24 @@
+import { createDomElements } from './js/dom.js';
+import { renderCircle, renderSquare, renderDiamond } from './js/render.js';
+
 const COLORS = ["color-one", "color-two", "color-three"]
-const FILLINGS = ["nofill", "pattern", "solid"]
-const NUMBERS = ["one", "two", "three"]
-const SHAPES = ["shape-one", "shape-two", "shape-three"]
+
+// The four numbers in the tile array represent these properties:
+// [color, pattern, number, shape]
+
+// const FILLINGS = ["nofill", "pattern", "solid"]
+// const NUMBERS = ["one", "two", "three"]
+// const SHAPES = ["shape-one", "shape-two", "shape-three"]
 
 const UNIT = 12;
 
 let tilesOnBoard = new Array()
 let tilesRemaining = new Array()
-let tilesUsed = new Array()
+let tilesRemoved = new Array()
+let selectedTiles = 0;
+// let sta = new Array()
+// console.log(selectedTiles);
 
-
-function renderCircle(node, radius = UNIT, color, fill) {
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    const circle1 = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
-    const circle2 = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
-    const circle3 = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
-
-    svg.setAttribute('width', `${radius * 2}px`);
-    svg.setAttribute('height', `${radius * 2}px`);
-    svg.setAttribute('viewBox', '0 0 60 60')
-    svg.classList.add('post-icon');
-
-    circle1.setAttribute('cx', 30);
-    circle1.setAttribute('cy', 30);
-    circle1.setAttribute('r', 30);
-    circle1.setAttribute('stroke', 'none');
-    circle1.classList.add(color);
-    svg.appendChild(circle1);
-
-    if (fill > 0) {
-        circle2.setAttribute('cx', 30);
-        circle2.setAttribute('cy', 30);
-        circle2.setAttribute('r', 20);
-        circle2.classList.add("white");
-        circle2.classList.add(color);
-        circle2.setAttribute('stroke', 'none');
-        svg.appendChild(circle2);
-    }
-
-    if (fill === 2) {
-        circle3.setAttribute('cx', 30);
-        circle3.setAttribute('cy', 30);
-        circle3.setAttribute('r', 10);
-        circle3.classList.add(color);
-        circle3.setAttribute('stroke', 'none');
-        svg.appendChild(circle3);
-    }
-
-    node.append(svg);
-}
-
-function renderSquare(node, side = UNIT, color, fill) {
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    const rect1 = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
-    const rect2 = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
-    const rect3 = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
-
-    svg.setAttribute('width', `${side * 2}px`);
-    svg.setAttribute('height', `${side * 2}px`);
-    svg.setAttribute('viewBox', '0 0 60 60')
-    svg.classList.add('post-icon');
-
-    rect1.setAttribute('x', 0);
-    rect1.setAttribute('y', 0);
-    rect1.setAttribute('width', 60);
-    rect1.setAttribute('height', 60);
-    rect1.classList.add(color);
-    rect1.setAttribute('stroke', 'none');
-    svg.appendChild(rect1);
-
-    if (fill > 0) {
-        rect2.setAttribute('x', 10);
-        rect2.setAttribute('y', 10);
-        rect2.setAttribute('width', 40);
-        rect2.setAttribute('height', 40);
-        rect2.classList.add("white");
-        rect2.classList.add(color);
-        rect2.setAttribute('stroke', 'none');
-        svg.appendChild(rect2);
-    }
-
-    if (fill === 2) {
-        rect3.setAttribute('x', 20);
-        rect3.setAttribute('y', 20);
-        rect3.setAttribute('width', 20);
-        rect3.setAttribute('height', 20);
-        rect3.classList.add(color);
-        rect3.setAttribute('stroke', 'none');
-        svg.appendChild(rect3);
-    }
-
-    node.append(svg);
-}
-
-function renderDiamond(node, side = UNIT, color, fill) {
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    const path1 = document.createElementNS("http://www.w3.org/2000/svg", 'path');
-    const path2 = document.createElementNS("http://www.w3.org/2000/svg", 'path');
-    const path3 = document.createElementNS("http://www.w3.org/2000/svg", 'path');
-
-    svg.setAttribute('width', `${side * 2}px`);
-    svg.setAttribute('height', `${side * 2}px`);
-    svg.setAttribute('viewBox', '0 0 60 60')
-    svg.classList.add('post-icon');
-
-    path1.setAttribute('d', 'M0 30 30 0l30 30-30 30Z');
-    path1.classList.add(color);
-    path1.setAttribute('stroke', 'none');
-    svg.appendChild(path1);
-
-    if (fill > 0) {
-        path2.setAttribute('d', 'm10 30 20-20 20 20-20 20Z');
-        path2.classList.add("white");
-        path2.classList.add(color);
-        path2.setAttribute('stroke', 'none');
-        svg.appendChild(path2);
-    }
-
-    if (fill === 2) {
-        path3.setAttribute('d', 'm20 30 10-10 10 10-10 10Z');
-        path3.classList.add(color);
-        path3.setAttribute('stroke', 'none');
-        svg.appendChild(path3);
-    }
-
-    node.append(svg);
-    return
-}
-
-// https://stackoverflow.com/q/2450954/1085805
-function shuffleArray(array) {
-    for (var i = array.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var temp = array[i];
-        array[i] = array[j];
-        array[j] = temp;
-    }
-}
-
-const tileSet = new Array();
-for (let i = 0; i < 81; i++) {
-    tileSet.push(toBase(3, i))
-}
-
-shuffleArray(tileSet);
-
-function tileDecorator(tileId, tileArray) {
-    for (let i = 0; i <= tileArray[2]; i++) {
-        const tilePos = document.getElementById("tile-no-" + tileId);
-        tilePos.classList.add(COLORS[tileArray[0]]);
-        let shape = document.createElement("div");
-        if (tileArray[3] === 0) {
-            renderCircle(shape, 12, COLORS[tileArray[0]], tileArray[1]);
-            tilePos.append(shape);
-            continue
-        }
-
-        if (tileArray[3] === 1) {
-            renderSquare(shape, 12, COLORS[tileArray[0]], tileArray[1]);
-            tilePos.append(shape);
-            continue
-        }
-        else {
-            renderDiamond(shape, 12, COLORS[tileArray[0]], tileArray[1]);
-            tilePos.append(shape);
-        }
-    }
-
-}
-
-function tileBuilder() {
-    for (let i = 0; i < 12; i++) {
-        let newTile = tileSet.pop();
-        tilesOnBoard.push(newTile);
-        tileDecorator(i, newTile);
-    }
-}
 
 // TODO: Study and see how the following works.
 // https://stackoverflow.com/a/67473632/1085805
@@ -230,21 +73,82 @@ Array.prototype.equals = function (array) {
     return true;
 }
 
-// function toggleTileDataState(tile) {
-//     if (tile.target.dataset.state)
-// }
 
+
+// https://stackoverflow.com/q/2450954/1085805
+function shuffleArray(array) {
+    for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+}
+
+const tileSet = new Array();
+for (let i = 0; i < 81; i++) {
+    tileSet.push(toBase(3, i))
+}
+
+shuffleArray(tileSet);
+
+function tileBuilder(tileId, tileArray) {
+    console.log("inside tile builder");
+    console.log("tileID: " + tileId);
+    console.log("tileArray: " + tileArray);
+    for (let i = 0; i <= tileArray[2]; i++) {
+        const tile = document.getElementById("tile-no-" + tileId);
+        // tilePos.parentElement.classList.add(COLORS[tileArray[0]]);
+        tile.classList.add(COLORS[tileArray[0]]);
+        // tile.dataset.positionIndex = tileArray[2];
+        let shape = document.createElement("div");
+        shape.classList.add("svg-element")
+        if (tileArray[3] === 0) {
+            renderCircle(shape, 12, COLORS[tileArray[0]], tileArray[1]);
+            tile.append(shape);
+            continue
+        }
+        if (tileArray[3] === 1) {
+            renderSquare(shape, 12, COLORS[tileArray[0]], tileArray[1]);
+            tile.append(shape);
+            continue
+        }
+        else {
+            renderDiamond(shape, 12, COLORS[tileArray[0]], tileArray[1]);
+            tile.append(shape);
+        }
+    }
+
+}
+
+function boardBuilder() {
+    for (let i = 0; i < 12; i++) {
+        let newTile = tileSet.pop();
+        tilesOnBoard.push(newTile);
+        tileBuilder(i, newTile);
+    }
+    console.log(tilesOnBoard);
+}
 
 function activateTiles() {
-    const tiles = Array.from(document.getElementsByClassName("tile"));
-    tiles.forEach(tile => {
-        tile.addEventListener(
+    const tiles = Array.from(document.getElementsByClassName("tile-container"));
+    // console.log(tiles);
+    tiles.forEach(t => {
+        t.addEventListener(
             "click",
             (event) => {
                 if (event.target.dataset.state === "selected") {
                     event.target.dataset.state = "idle"
+                    selectedTiles--;
+                    console.log(selectedTiles);
                 } else {
+                    if (selectedTiles === 3) {
+                        processToast("You can select 3 tiles only.")
+                        return;
+                    }
                     event.target.dataset.state = "selected"
+                    selectedTiles++;
+                    console.log(selectedTiles);
                 }
             }
         )
@@ -252,54 +156,92 @@ function activateTiles() {
     )
 }
 
-// this.keyboard = document.getElementById("onscreen-keyboard");
+// TODO: activateSetButton function does too much. Refactor.
+function activateSetButton() {
+    const button = document.getElementById("set-button");
+    button.addEventListener(
+        "click",
+        (event) => {
+            const selectedTiles = Array.from(document.querySelectorAll(`[data-state="selected"]`));
+            const selectedTilesArray = new Array();
+            const indexArray = new Array();
+            selectedTiles.forEach(tile => {
+                let indexNo = parseInt(tile.dataset.index);
+                selectedTilesArray.push(tilesOnBoard[indexNo]);
+                indexArray.push(indexNo);
+            });
+            console.log(selectedTiles);
+            console.log(selectedTilesArray);
+            handleSubmit(selectedTilesArray, indexArray);
+        }
+    )
 
-// activateOnscreenKeyboard() {
-//     this.keyboard.addEventListener(
-//         "click",
-//         (event) => {
-//             if (event.target.className === "keyboard-button") {
-//                 let key = event.target.dataset.key;
-//                 handleMouseClick(key);
-//             }
-//         },
-//         {
-//             signal: this.onscreenKeyboardSwitch.signal,
-//         }
-//     );
-// }
+}
 
-// this.onscreenKeyboardSwitch = new AbortController();
+function handleSubmit(selectedTilesArray, indexArray) {
+    if (checkSet(selectedTilesArray)) {
+        selectedTilesArray.forEach(tile => {
+            tilesRemoved.push([tile]);
+        });
+        removeTiles();
+        setTimeout(() => {
+            buildNewTiles(indexArray);
+        }, 1500);
+        // buildNewTiles(indexArray);
+    } else {
+        processToast("Not a valid set.")
+        setToastTimer();
+    }
+}
 
-// deactivateOnscreenKeyboard() {
-//     this.onscreenKeyboardSwitch.abort();
-// }
+function removeTiles() {
+    const selectedTiles = Array.from(document.querySelectorAll(`[data-state="selected"]`));
+    selectedTiles.forEach(tile => {
+        tile.classList.add("fade-out");
+        tile.dataset.state = "empty";
+    });
+}
 
-// function handleMouseClick(e) {
-//     if (e === "delete") {
-//         game.pointer.doBackspace();
-//         document.activeElement.blur(); //important
-//         return;
-//     } else if (e === "enter") {
-//         game.guess.handleSubmission();
-//         document.activeElement.blur();
-//         return;
-//     } else if (e === "ai") {
-//         document.activeElement.blur();
-//         processMessageBox("Try: " + game.suggestionAi.suggestion.toUpperCase());
-//         setMessageBoxTimer();
-//     }
-//     else {
-//         animateLetterInputEffect();
-//         game.pointer.writeContent(e);
-//         document.activeElement.blur();
-//         return;
-//     }
-// }
+
+// https://stackoverflow.com/q/3955229/1085805
+// See the above link for a discussion.
+function removeAllChildNodes(parent) {
+    while (parent.firstChild) {
+        parent.removeChild(parent.firstChild);
+    }
+}
+
+function buildNewTiles(indexArray) {
+    const selectedTiles = Array.from(document.querySelectorAll(`[data-state="empty"]`));
+    selectedTiles.forEach(tile => {
+        tile.classList.remove("fade-out");
+        removeAllChildNodes(tile);
+        tile.classList.add("fade-in");
+        let newTile = tileSet.pop();
+        console.log("new tile: " + newTile);
+        let index = indexArray.pop();
+        console.log("new index: " + index);
+        tileBuilder(index, newTile);
+
+        tile.dataset.state = "idle";
+    });
+}
+
+
+function processToast(message) {
+    var toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.style.visibility = "visible";
+    setTimeout(() => {
+        toast.style.visibility = "hidden";
+    }, 1500);
+}
+
 
 createDomElements();
 activateTiles();
-tileBuilder();
+activateSetButton();
+boardBuilder();
 
 
 const testArray = [[1, 0, 0, 1], [2, 1, 2, 0], [0, 2, 1, 1]]
@@ -375,107 +317,5 @@ console.log(getSet());
 
 
 
-function createDomElements() {
-    // createModal();
-    createMainContainer();
-    createHeader();
-    createBoard();
-    createTiles();
-    createFooter();
-}
 
 
-function createMainContainer() {
-    const mainContainer = document.createElement("div");
-    mainContainer.setAttribute("id", "main-container");
-    document.body.append(mainContainer);
-}
-
-function createHeader() {
-    const headerDiv = document.createElement("div");
-    headerDiv.setAttribute("id", "header");
-    headerDiv.classList.add("header");
-    const header = document.createElement("h1");
-    const headerS = document.createElement('span');
-    headerS.innerHTML = "s";
-    const headerE = document.createElement('span');
-    headerE.innerHTML = "e";
-    const headerT = document.createElement('span');
-    headerT.innerHTML = "t";
-    // const headerText = document.createTextNode("Set");
-    // header.appendChild(headerText);
-    header.append(headerS);
-    header.append(headerE);
-    header.append(headerT);
-    headerDiv.appendChild(header);
-    document.getElementById("main-container").append(headerDiv);
-}
-
-
-// function createMessageBoxDiv(divId) {
-//   const gameContainer = document.getElementById("game-container");
-//   const messageBoxContainer = document.createElement("div");
-//   messageBoxContainer.setAttribute("id", divId);
-//   messageBoxContainer.classList.add("message-box");
-//   messageBoxContainer.textContent = ("I am a toast!")
-//   gameContainer.append(messageBoxContainer);
-// }
-
-function createBoard() {
-    const board = document.createElement("div");
-    board.setAttribute("id", "board");
-    document.getElementById("main-container").append(board);
-}
-
-function createTiles() {
-    const board = document.getElementById("board");
-    let tileCounter = 0;
-    for (let rowIndex = 0; rowIndex < 3; rowIndex++) {
-        const tileRow = document.createElement("div");
-        // tileRow.setAttribute("id", "row-" + rowIndex);
-        tileRow.setAttribute("id", "row-" + rowIndex);
-        tileRow.classList.add("row-container");
-        board.append(tileRow);
-        for (let clmIndex = 0; clmIndex < 4; clmIndex++) {
-            const tileContainer = document.createElement("div");
-            tileContainer.classList.add("tile-container");
-
-            tileRow.append(tileContainer);
-            let rowElement = document.createElement("div");
-            rowElement.setAttribute("id", "tile-no-" + tileCounter);
-            tileCounter++;
-            rowElement.classList.add("tile");
-            rowElement.dataset.state = "idle";
-            tileContainer.append(rowElement);
-        }
-    }
-}
-
-function createFooter() {
-    const footer = document.createElement("div");
-    footer.setAttribute("id", "footer");
-    document.getElementById("main-container").append(footer);
-
-    const button = document.createElement("button");
-    button.setAttribute("id", "set-button");
-    button.classList.add("footer")
-    button.textContent = "Set";
-    footer.append(button);
-
-    const scoreboard = document.createElement("div");
-    scoreboard.setAttribute("id", "scoreboard");
-    scoreboard.classList.add("footer");
-    footer.append(scoreboard);
-
-    const scoreLabel = document.createElement("div");
-    scoreLabel.setAttribute("id", "score-label");
-    scoreLabel.classList.add("scoreboard");
-    scoreLabel.textContent = "Score:";
-    scoreboard.append(scoreLabel);
-
-    const score =  document.createElement("div");
-    score.setAttribute("id", "score");
-    score.classList.add("score");
-    score.textContent = "0";
-    scoreboard.append(score);
-}
