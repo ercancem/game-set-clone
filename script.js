@@ -1,21 +1,52 @@
-import { createDomElements } from './js/dom.js';
-import { renderCircle, renderSquare, renderDiamond } from './js/render.js';
+// import { createDomElements } from './js/dom.js';
+// import { renderCircle, renderSquare, renderDiamond } from './js/render.js';
 
-const COLORS = ["color-one", "color-two", "color-three"]
-
-// The four numbers in the tile array represent these properties:
+// DEFINITIONS
+// A set is a an array of 4 integers where each integer
+// can take the value of 0, 1, or 2. E.g. [1, 0, 2, 0]
+// The four numbers represent these properties:
 // [color, pattern, number, shape]
+// (The order is alphabetical for ease of memory.)
+// A tile is visual repsresentation of a set, contained
+// in a div element.
+// Board is the div that contains all the tiles that the user sees.
 
-// const FILLINGS = ["nofill", "pattern", "solid"]
-// const NUMBERS = ["one", "two", "three"]
-// const SHAPES = ["shape-one", "shape-two", "shape-three"]
+class Game {
+    constructor() {
+        this.setArraysOnBoard = new Array();
+        this.selectedTilesCount = 0;
+        this.completeSetArray = buildCompleteSetArray();
+    }
+
+    resetSetArraysOnBoard() {
+        this.setArraysOnBoard = [];
+    }
+
+    buildSetArraysOnBoard() {
+        this.resetSetArraysOnBoard();
+        let tiles = Array.from(document.getElementsByClassName("tile"));
+        tiles.forEach(tile => {
+            this.setArraysOnBoard.push(tile.dataset.setArray);
+        });
+        console.log("Set arrays:")
+        console.table(this.setArraysOnBoard)
+    }
+
+    const setArray = new Array();
+for (let i = 0; i < 81; i++) {
+    setArray.push(toBase(3, i))
+}
+
+}
+
+const game = new Game;
 
 const UNIT = 12;
-
+const COLORS = ["color-one", "color-two", "color-three"]
 let tilesOnBoard = new Array()
 let tilesRemaining = new Array()
 let tilesRemoved = new Array()
-let selectedTiles = 0;
+let selectedTilesCount = 0;
 // let sta = new Array()
 // console.log(selectedTiles);
 
@@ -85,22 +116,24 @@ function shuffleArray(array) {
     }
 }
 
-const tileSet = new Array();
-for (let i = 0; i < 81; i++) {
-    tileSet.push(toBase(3, i))
+function buildSetArray() {
+
 }
 
-shuffleArray(tileSet);
+const setArray = new Array();
+for (let i = 0; i < 81; i++) {
+    setArray.push(toBase(3, i))
+}
 
-function tileBuilder(tileId, tileArray) {
-    console.log("inside tile builder");
-    console.log("tileID: " + tileId);
-    console.log("tileArray: " + tileArray);
+shuffleArray(setArray);
+
+function constructSetTile(tileId, tileArray) {
     for (let i = 0; i <= tileArray[2]; i++) {
         const tile = document.getElementById("tile-no-" + tileId);
-        // tilePos.parentElement.classList.add(COLORS[tileArray[0]]);
         tile.classList.add(COLORS[tileArray[0]]);
-        // tile.dataset.positionIndex = tileArray[2];
+        // The following data attribute is helpful when
+        // constructing the set-array-list on board
+        tile.dataset.setArray = tileArray.join("");
         let shape = document.createElement("div");
         shape.classList.add("svg-element")
         if (tileArray[3] === 0) {
@@ -123,11 +156,12 @@ function tileBuilder(tileId, tileArray) {
 
 function boardBuilder() {
     for (let i = 0; i < 12; i++) {
-        let newTile = tileSet.pop();
+        let newTile = setArray.pop();
         tilesOnBoard.push(newTile);
-        tileBuilder(i, newTile);
+        constructSetTile(i, newTile);
     }
-    console.log(tilesOnBoard);
+    console.table(tilesOnBoard);
+    game.buildSetArraysOnBoard();
 }
 
 function activateTiles() {
@@ -139,16 +173,14 @@ function activateTiles() {
             (event) => {
                 if (event.target.dataset.state === "selected") {
                     event.target.dataset.state = "idle"
-                    selectedTiles--;
-                    console.log(selectedTiles);
+                    selectedTilesCount--;
                 } else {
-                    if (selectedTiles === 3) {
+                    if (selectedTilesCount === 3) {
                         processToast("You can select 3 tiles only.")
                         return;
                     }
                     event.target.dataset.state = "selected"
-                    selectedTiles++;
-                    console.log(selectedTiles);
+                    selectedTilesCount++;
                 }
             }
         )
@@ -162,47 +194,62 @@ function activateSetButton() {
     button.addEventListener(
         "click",
         (event) => {
+            // Check if enough tiles selected
+            if (document.querySelector('[data-state="selected"]') === null) {
+                processToast("Select 3 tiles.")
+                return
+            }
+            // Construct an array of selected tiles
             const selectedTiles = Array.from(document.querySelectorAll(`[data-state="selected"]`));
-            const selectedTilesArray = new Array();
+            // Extract the set from each tile;
+            // push the set to setArray, and the index
+            // of the tile to the indexArray.
+            const setArray = new Array();
             const indexArray = new Array();
             selectedTiles.forEach(tile => {
                 let indexNo = parseInt(tile.dataset.index);
-                selectedTilesArray.push(tilesOnBoard[indexNo]);
+                setArray.push(tilesOnBoard[indexNo]);
                 indexArray.push(indexNo);
             });
-            console.log(selectedTiles);
-            console.log(selectedTilesArray);
-            handleSubmit(selectedTilesArray, indexArray);
+            // selectedTiles, setArray, indexArray will be needed
+            // so send them as parameters so that they need not be
+            // computed again and again.
+            handleSubmit(selectedTiles, setArray, indexArray);
         }
     )
 
 }
 
-function handleSubmit(selectedTilesArray, indexArray) {
-    if (checkSet(selectedTilesArray)) {
-        selectedTilesArray.forEach(tile => {
-            tilesRemoved.push([tile]);
-        });
-        removeTiles();
+function handleSubmit(selectedTiles, setArray, indexArray) {
+    if (selectedTiles.length < 3) {
+        processToast("Select 3 tiles.")
+        setToastTimer();
+        return
+    }
+    if (checkSet(setArray)) {
+        removeTiles(selectedTiles);
+        incrementScore();
         setTimeout(() => {
-            buildNewTiles(indexArray);
+            buildNewTiles(selectedTiles, indexArray);
         }, 1500);
-        // buildNewTiles(indexArray);
     } else {
         processToast("Not a valid set.")
-        setToastTimer();
     }
 }
 
-function removeTiles() {
-    const selectedTiles = Array.from(document.querySelectorAll(`[data-state="selected"]`));
+function removeTiles(selectedTiles) {
     selectedTiles.forEach(tile => {
         tile.classList.add("fade-out");
-        tile.dataset.state = "empty";
+        resetSelectedTilesCount();
+        setTimeout(() => {
+            removeAllChildNodes(tile);
+            tile.className = '';
+            tile.classList.add("tile");
+        }, 1500);
     });
 }
 
-
+4
 // https://stackoverflow.com/q/3955229/1085805
 // See the above link for a discussion.
 function removeAllChildNodes(parent) {
@@ -211,20 +258,22 @@ function removeAllChildNodes(parent) {
     }
 }
 
-function buildNewTiles(indexArray) {
-    const selectedTiles = Array.from(document.querySelectorAll(`[data-state="empty"]`));
-    selectedTiles.forEach(tile => {
-        tile.classList.remove("fade-out");
-        removeAllChildNodes(tile);
-        tile.classList.add("fade-in");
-        let newTile = tileSet.pop();
-        console.log("new tile: " + newTile);
-        let index = indexArray.pop();
-        console.log("new index: " + index);
-        tileBuilder(index, newTile);
+function resetSelectedTilesCount() {
+    selectedTilesCount = 0;
+}
 
+function buildNewTiles(selectedTiles, indexArray) {
+    selectedTiles.forEach(tile => {
+        tile.classList.add("fade-in");
+        let newTile = setArray.pop();
+        let index = indexArray.pop();
+        tilesOnBoard[indexArray] = newTile;
+        constructSetTile(index, newTile);
         tile.dataset.state = "idle";
+        tile.classList.remove("fade-in");
     });
+    console.table(tilesOnBoard);
+    console.table(getSet());
 }
 
 
@@ -242,9 +291,6 @@ createDomElements();
 activateTiles();
 activateSetButton();
 boardBuilder();
-
-
-const testArray = [[1, 0, 0, 1], [2, 1, 2, 0], [0, 2, 1, 1]]
 
 
 /**
@@ -275,7 +321,7 @@ function checkSet(arr) {
         .every(size => size != 2);
 }
 
-console.log(checkSet(testArray));
+// console.log(checkSet(testArray));
 
 // https://stackoverflow.com/q/43241174/1085805
 // https://stackoverflow.com/a/74115113/1085805
@@ -309,13 +355,269 @@ function getSet() {
     return indexArray
 }
 
-
-console.log(getSet());
-
-
-
-
+function incrementScore() {
+    const score = document.getElementById("score").textContent
+    document.getElementById("score").textContent = parseInt(score) + 3;
+}
 
 
+console.table(getSet());
 
 
+
+
+
+
+
+
+function renderCircle(node, radius = UNIT, color, fill) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    const circle1 = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
+    const circle2 = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
+    const circle3 = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
+
+    svg.setAttribute('width', `${radius * 2}px`);
+    svg.setAttribute('height', `${radius * 2}px`);
+    svg.setAttribute('viewBox', '0 0 60 60')
+    svg.classList.add('post-icon');
+
+    circle1.setAttribute('cx', 30);
+    circle1.setAttribute('cy', 30);
+    circle1.setAttribute('r', 30);
+    circle1.setAttribute('stroke', 'none');
+    circle1.classList.add(color);
+    svg.appendChild(circle1);
+
+    if (fill > 0) {
+        circle2.setAttribute('cx', 30);
+        circle2.setAttribute('cy', 30);
+        circle2.setAttribute('r', 20);
+        circle2.classList.add("white");
+        circle2.classList.add(color);
+        circle2.setAttribute('stroke', 'none');
+        svg.appendChild(circle2);
+    }
+
+    if (fill === 2) {
+        circle3.setAttribute('cx', 30);
+        circle3.setAttribute('cy', 30);
+        circle3.setAttribute('r', 10);
+        circle3.classList.add(color);
+        circle3.setAttribute('stroke', 'none');
+        svg.appendChild(circle3);
+    }
+
+    node.append(svg);
+}
+
+function renderSquare(node, side = UNIT, color, fill) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    const rect1 = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+    const rect2 = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+    const rect3 = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+
+    svg.setAttribute('width', `${side * 2}px`);
+    svg.setAttribute('height', `${side * 2}px`);
+    svg.setAttribute('viewBox', '0 0 60 60')
+    svg.classList.add('post-icon');
+
+    rect1.setAttribute('x', 0);
+    rect1.setAttribute('y', 0);
+    rect1.setAttribute('width', 60);
+    rect1.setAttribute('height', 60);
+    rect1.classList.add(color);
+    rect1.setAttribute('stroke', 'none');
+    svg.appendChild(rect1);
+
+    if (fill > 0) {
+        rect2.setAttribute('x', 10);
+        rect2.setAttribute('y', 10);
+        rect2.setAttribute('width', 40);
+        rect2.setAttribute('height', 40);
+        rect2.classList.add("white");
+        rect2.classList.add(color);
+        rect2.setAttribute('stroke', 'none');
+        svg.appendChild(rect2);
+    }
+
+    if (fill === 2) {
+        rect3.setAttribute('x', 20);
+        rect3.setAttribute('y', 20);
+        rect3.setAttribute('width', 20);
+        rect3.setAttribute('height', 20);
+        rect3.classList.add(color);
+        rect3.setAttribute('stroke', 'none');
+        svg.appendChild(rect3);
+    }
+
+    node.append(svg);
+}
+
+function renderDiamond(node, side = UNIT, color, fill) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    const path1 = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+    const path2 = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+    const path3 = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+
+    svg.setAttribute('width', `${side * 2}px`);
+    svg.setAttribute('height', `${side * 2}px`);
+    svg.setAttribute('viewBox', '0 0 60 60')
+    svg.classList.add('post-icon');
+
+    path1.setAttribute('d', 'M0 30 30 0l30 30-30 30Z');
+    path1.classList.add(color);
+    path1.setAttribute('stroke', 'none');
+    svg.appendChild(path1);
+
+    if (fill > 0) {
+        path2.setAttribute('d', 'm10 30 20-20 20 20-20 20Z');
+        path2.classList.add("white");
+        path2.classList.add(color);
+        path2.setAttribute('stroke', 'none');
+        svg.appendChild(path2);
+    }
+
+    if (fill === 2) {
+        path3.setAttribute('d', 'm20 30 10-10 10 10-10 10Z');
+        path3.classList.add(color);
+        path3.setAttribute('stroke', 'none');
+        svg.appendChild(path3);
+    }
+
+    node.append(svg);
+    return
+}
+
+
+
+function createDomElements() {
+    // createModal();
+    createMainContainer();
+    // createHeader();
+    createTop();
+    createToast();
+    createBoard();
+    createTiles();
+    createFooter();
+}
+
+
+function createMainContainer() {
+    const mainContainer = document.createElement("div");
+    mainContainer.setAttribute("id", "main-container");
+    document.body.append(mainContainer);
+}
+
+function createHeader() {
+    const headerDiv = document.createElement("div");
+    headerDiv.setAttribute("id", "header");
+    headerDiv.classList.add("header");
+    const header = document.createElement("h1");
+    const headerS = document.createElement('span');
+    headerS.innerHTML = "s";
+    const headerE = document.createElement('span');
+    headerE.innerHTML = "e";
+    const headerT = document.createElement('span');
+    headerT.innerHTML = "t";
+    // const headerText = document.createTextNode("Set");
+    // header.appendChild(headerText);
+    header.append(headerS);
+    header.append(headerE);
+    header.append(headerT);
+    headerDiv.appendChild(header);
+    document.getElementById("main-container").append(headerDiv);
+}
+
+function createTop() {
+    const topSection = document.createElement("div");
+    topSection.setAttribute("id", "top-section");
+    document.getElementById("main-container").append(topSection);
+
+    const scoreboard = document.createElement("div");
+    scoreboard.setAttribute("id", "scoreboard");
+    scoreboard.classList.add("top-section");
+    topSection.append(scoreboard);
+
+    const scoreLabel = document.createElement("div");
+    scoreLabel.setAttribute("id", "score-label");
+    scoreLabel.classList.add("scoreboard");
+    scoreLabel.textContent = "Score:";
+    scoreboard.append(scoreLabel);
+
+    const score =  document.createElement("div");
+    score.setAttribute("id", "score");
+    score.classList.add("score");
+    score.textContent = "0";
+    scoreboard.append(score);
+
+}
+
+function createToast() {
+    const mainContainer = document.getElementById("main-container");
+    const toast = document.createElement("div");
+    toast.setAttribute("id", "toast");
+    toast.textContent = ("I am a toast!")
+    mainContainer.append(toast);
+}
+
+
+function createBoard() {
+    const board = document.createElement("div");
+    board.setAttribute("id", "board");
+    document.getElementById("main-container").append(board);
+}
+
+function createTiles() {
+    const board = document.getElementById("board");
+    let tileCounter = 0;
+    for (let rowIndex = 0; rowIndex < 3; rowIndex++) {
+        const tileRow = document.createElement("div");
+        // tileRow.setAttribute("id", "row-" + rowIndex);
+        tileRow.setAttribute("id", "row-" + rowIndex);
+        tileRow.classList.add("row-container");
+        board.append(tileRow);
+        for (let clmIndex = 0; clmIndex < 4; clmIndex++) {
+            const tileContainer = document.createElement("div");
+            tileContainer.dataset.state = "idle";
+            tileContainer.classList.add("tile-container");
+
+            tileRow.append(tileContainer);
+            let tile = document.createElement("div");
+            tile.setAttribute("id", "tile-no-" + tileCounter);
+            tile.classList.add("tile");
+            tile.dataset.index = tileCounter;
+            tileCounter++;
+            tileContainer.append(tile);
+        }
+    }
+}
+
+function createFooter() {
+    const footer = document.createElement("div");
+    footer.setAttribute("id", "footer");
+    document.getElementById("main-container").append(footer);
+
+    const button = document.createElement("button");
+    button.setAttribute("id", "set-button");
+    button.type = "button";
+    button.classList.add("footer")
+    button.textContent = "Submit SET";
+    footer.append(button);
+
+    // const scoreboard = document.createElement("div");
+    // scoreboard.setAttribute("id", "scoreboard");
+    // scoreboard.classList.add("footer");
+    // footer.append(scoreboard);
+
+    // const scoreLabel = document.createElement("div");
+    // scoreLabel.setAttribute("id", "score-label");
+    // scoreLabel.classList.add("scoreboard");
+    // scoreLabel.textContent = "Score:";
+    // scoreboard.append(scoreLabel);
+
+    // const score =  document.createElement("div");
+    // score.setAttribute("id", "score");
+    // score.classList.add("score");
+    // score.textContent = "0";
+    // scoreboard.append(score);
+}

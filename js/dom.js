@@ -2,7 +2,8 @@
 export function createDomElements() {
     // createModal();
     createMainContainer();
-    createHeader();
+    // createHeader();
+    createTop();
     createToast();
     createBoard();
     createTiles();
@@ -34,6 +35,30 @@ function createHeader() {
     header.append(headerT);
     headerDiv.appendChild(header);
     document.getElementById("main-container").append(headerDiv);
+}
+
+function createTop() {
+    const topSection = document.createElement("div");
+    topSection.setAttribute("id", "top-section");
+    document.getElementById("main-container").append(topSection);
+
+    const scoreboard = document.createElement("div");
+    scoreboard.setAttribute("id", "scoreboard");
+    scoreboard.classList.add("top-section");
+    topSection.append(scoreboard);
+
+    const scoreLabel = document.createElement("div");
+    scoreLabel.setAttribute("id", "score-label");
+    scoreLabel.classList.add("scoreboard");
+    scoreLabel.textContent = "Score:";
+    scoreboard.append(scoreLabel);
+
+    const score =  document.createElement("div");
+    score.setAttribute("id", "score");
+    score.classList.add("score");
+    score.textContent = "0";
+    scoreboard.append(score);
+
 }
 
 function createToast() {
@@ -85,23 +110,23 @@ function createFooter() {
     button.setAttribute("id", "set-button");
     button.type = "button";
     button.classList.add("footer")
-    button.textContent = "Submit";
+    button.textContent = "Submit SET";
     footer.append(button);
 
-    const scoreboard = document.createElement("div");
-    scoreboard.setAttribute("id", "scoreboard");
-    scoreboard.classList.add("footer");
-    footer.append(scoreboard);
+    // const scoreboard = document.createElement("div");
+    // scoreboard.setAttribute("id", "scoreboard");
+    // scoreboard.classList.add("footer");
+    // footer.append(scoreboard);
 
-    const scoreLabel = document.createElement("div");
-    scoreLabel.setAttribute("id", "score-label");
-    scoreLabel.classList.add("scoreboard");
-    scoreLabel.textContent = "Score:";
-    scoreboard.append(scoreLabel);
+    // const scoreLabel = document.createElement("div");
+    // scoreLabel.setAttribute("id", "score-label");
+    // scoreLabel.classList.add("scoreboard");
+    // scoreLabel.textContent = "Score:";
+    // scoreboard.append(scoreLabel);
 
-    const score =  document.createElement("div");
-    score.setAttribute("id", "score");
-    score.classList.add("score");
-    score.textContent = "0";
-    scoreboard.append(score);
+    // const score =  document.createElement("div");
+    // score.setAttribute("id", "score");
+    // score.classList.add("score");
+    // score.textContent = "0";
+    // scoreboard.append(score);
 }
