@@ -111,11 +111,12 @@
     font-size: 1.2rem;
     font-weight: bold;
     position: fixed;
+    text-align: center;
     top: 60px;
     left: 0;
     right: 0;
     margin: 0 auto;
-    width: fit-content;
+    max-width: 80%;
     padding: 0.8em;
     border-radius: 6px;
     /* opacity: 0.95; */

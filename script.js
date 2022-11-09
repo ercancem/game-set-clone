@@ -1,52 +1,224 @@
 // import { createDomElements } from './js/dom.js';
 // import { renderCircle, renderSquare, renderDiamond } from './js/render.js';
 
-// DEFINITIONS
-// A set is a an array of 4 integers where each integer
-// can take the value of 0, 1, or 2. E.g. [1, 0, 2, 0]
-// The four numbers represent these properties:
-// [color, pattern, number, shape]
-// (The order is alphabetical for ease of memory.)
-// A tile is visual repsresentation of a set, contained
-// in a div element.
-// Board is the div that contains all the tiles that the user sees.
-
 class Game {
+    // A CARD is a an array of 4 integers where each integer
+    // can take the value of 0, 1, or 2. E.g. [1, 0, 2, 0]
+    // The four numbers represent these properties:
+    // [color, filling, number, shape]
+    // (The order is alphabetical for ease of memory.)
+
+    // A TILE is an HTML div that represents a CARD visually.
+
+    // A SET is a selection of 3 cards that form a set with
+    // respect to the rules of the game.
+
+    // Build an array of 81 cards.
+    #deck = this.#buildDeck();
+
     constructor() {
-        this.setArraysOnBoard = new Array();
+        // The UNIT is supposed to be the essential unit to build the
+        // mobile page. The integer is supposed to represent the number
+        // of pixels.Right now, it is not functional.
+        this.UNIT = 12;
+
+        // For now, the plan is to have 12 tiles on the screen.
+        // This is mainly due to the limitations of the mobile screen;
+        // More tiles means more crowded screen, and perhaps smaller
+        // tiles, which means inferior visuals.
+        // The number of tiles is relevant because mathematically,
+        // the minimum number of tiles that secure a set is 20.
+        // Thus, it is possible to have 12 tiles on board but have no set.
+        // That is a big problem. It means when the board is created
+        // we need to check if there is a set; if not, we need to
+        // bring in the cards that form a set. I leave that problem
+        // for later.
+        this.NUMBER_OF_TILES = 12;
+
+        this.COLORS = ["color-one", "color-two", "color-three"];
+        this.shuffledDeck = this.#shuffleDeck(this.#deck);
+
+        this.cardsOnBoard = [];
+        this.board = this.#createBoard();
         this.selectedTilesCount = 0;
-        this.completeSetArray = buildCompleteSetArray();
     }
 
-    resetSetArraysOnBoard() {
-        this.setArraysOnBoard = [];
-    }
 
-    buildSetArraysOnBoard() {
-        this.resetSetArraysOnBoard();
+    rebuildCardsOnBoard() {
+        this.cardsOnBoard = [];
         let tiles = Array.from(document.getElementsByClassName("tile"));
         tiles.forEach(tile => {
-            this.setArraysOnBoard.push(tile.dataset.setArray);
+            this.cardsOnBoard
+                .push(
+                    tile.dataset.card
+                        .split("")
+                        .map(char => parseInt(char))
+                )
         });
-        console.log("Set arrays:")
-        console.table(this.setArraysOnBoard)
     }
 
-    const setArray = new Array();
-for (let i = 0; i < 81; i++) {
-    setArray.push(toBase(3, i))
-}
+    // TODO: Study and see how the following works.
+    // https://stackoverflow.com/a/67473632/1085805
+    // toBase(2, 13) // [1, 1, 0, 1]
+    // toBase(3, 5) // [0, 0, 1, 2]
+    #toBase(base, num) {
+        const largest_power = ~~(Math.log(num) / Math.log(base));
+        const result = [0, 0, 0, 0];
+        for (let pow = largest_power; pow >= 0; pow--) {
+            const digit = ~~(num / base ** pow);
+            num -= digit * base ** pow;
+            result.shift();
+            result.push(digit);
+        }
+        return result;
+    }
+
+    #buildDeck() {
+        const deck = [];
+        for (let i = 0; i < 81; i++) {
+            deck.push(this.#toBase(3, i));
+        }
+        return deck;
+    }
+
+    // https://stackoverflow.com/q/2450954/1085805
+    #shuffleDeck(deck) {
+        for (let i = deck.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            let temp = deck[i];
+            deck[i] = deck[j];
+            deck[j] = temp;
+        }
+        return deck;
+    }
+
+    createTile(boardIndex, card) {
+        // Recall that card[2] represents the NUMBER of shapes;
+        // thus we loop that many times to create that many shapes.
+        for (let i = 0; i <= card[2]; i++) {
+            const tile = document.getElementById("tile-no-" + boardIndex);
+            tile.classList.add(this.COLORS[card[0]]);
+            // The following data attribute is helpful when
+            // constructing the set-array-list on board
+            tile.dataset.card = card.join("");
+            let shape = document.createElement("div");
+            shape.classList.add("svg-element")
+            if (card[3] === 0) {
+                renderCircle(shape, 12, this.COLORS[card[0]], card[1]);
+                tile.append(shape);
+                continue
+            }
+            if (card[3] === 1) {
+                renderSquare(shape, 12, this.COLORS[card[0]], card[1]);
+                tile.append(shape);
+                continue
+            }
+            else {
+                renderDiamond(shape, 12, this.COLORS[card[0]], card[1]);
+                tile.append(shape);
+            }
+        }
+    }
+
+    #createBoard() {
+        for (let i = 0; i < this.NUMBER_OF_TILES; i++) {
+            let card = this.shuffledDeck.pop();
+            this.createTile(i, card);
+            this.cardsOnBoard.push(card);
+        }
+        console.table(this.cardsOnBoard);
+    }
+
+    // https://stackoverflow.com/q/43241174/1085805
+    // https://stackoverflow.com/a/74115113/1085805
+    // TODO: Right now, I don't understand how the following works.
+    combinations(arr, k, prefix = []) {
+        if (k == 0) return [prefix];
+        return arr.flatMap((v, i) =>
+            this.combinations(arr.slice(i + 1), k - 1, [...prefix, v])
+        );
+    }
+
+    zip = (arr, ...arrs) => {
+        return arr.map((val, i) => arrs.reduce((a, arr) => [...a, arr[i]], [val]));
+    }
+
+    isSet(arr) {
+        // Zip the three tiles.
+        // testArray = [[1, 0, 0, 1], [2, 1, 2, 0], [0, 2, 1, 1]]
+        // zipped = [[1,2,0], [0,1,2], [0,2,1], [1,0,1]]
+        // In zipped array, each array represents the values of
+        // three set tiles for each property; one for color,
+        // one for pattern, one for number, and for shape.
+        // According to the rules, a set forms, if each array in the
+        // zipped either contains three same elements, or three distinct
+        // elements.
+        return this.zip(arr[0], arr[1], arr[2])
+            // Convert each element, which is an Array
+            // to a Set, thus eliminate duplicates.
+            .map(array => new Set(array))
+            // Now; if the set size is 1, then all the elements
+            // have the same values for that property; if the size
+            // is three, then all the elements have distinct values
+            // for that property. Thus, if have no array with size 2,
+            // we have a Set.
+            .map(set => set.size)
+            .every(size => size != 2);
+    }
+
+    getSet() {
+        // TODO: It is possible that the 12 tiles do not contain a set
+        // Thus we need to do domething for those cases
+        // If nothing else, so that getSet() does not crash!
+        const combs = this.combinations(this.cardsOnBoard, 3);
+        // console.log(comb);
+        const validSets = combs.filter(comb => this.isSet(comb));
+        // console.table(validSets)
+        const rand = Math.floor(Math.random() * validSets.length);
+        const tilesOnBoardAsStrings = this.cardsOnBoard.map(array => array.join(""));
+        const indexArray = []
+
+        validSets[rand].forEach(arr => {
+            for (let i = 0; i < tilesOnBoardAsStrings.length; i++) {
+                if (arr.join("") === tilesOnBoardAsStrings[i]) {
+                    indexArray.push(i)
+                }
+            }
+        });
+        return indexArray
+    }
+
+    incSelectedTileCount() {
+        this.selectedTilesCount++;
+    }
+
+    decSelectedTileCount() {
+        this.selectedTilesCount--;
+    }
+
+    resetSelectedTilesCount() {
+        this.selectedTilesCount = 0;
+    }
+
+    isSelectedTileCountLimit() {
+        return this.selectedTilesCount === 3;
+    }
 
 }
 
-const game = new Game;
+createDomElements();
+activateTiles();
+activateSetButton();
+// createBoard();
+const game = new Game();
+console.table(game.getSet());
 
-const UNIT = 12;
-const COLORS = ["color-one", "color-two", "color-three"]
-let tilesOnBoard = new Array()
-let tilesRemaining = new Array()
-let tilesRemoved = new Array()
-let selectedTilesCount = 0;
+// const UNIT = 12;
+// const COLORS = ["color-one", "color-two", "color-three"]
+// let this.cardsOnBoard = new Array()
+// let tilesRemaining = new Array()
+// let tilesRemoved = new Array()
+// let selectedTilesCount = 0;
 // let sta = new Array()
 // console.log(selectedTiles);
 
@@ -127,60 +299,58 @@ for (let i = 0; i < 81; i++) {
 
 shuffleArray(setArray);
 
-function constructSetTile(tileId, tileArray) {
-    for (let i = 0; i <= tileArray[2]; i++) {
-        const tile = document.getElementById("tile-no-" + tileId);
-        tile.classList.add(COLORS[tileArray[0]]);
-        // The following data attribute is helpful when
-        // constructing the set-array-list on board
-        tile.dataset.setArray = tileArray.join("");
-        let shape = document.createElement("div");
-        shape.classList.add("svg-element")
-        if (tileArray[3] === 0) {
-            renderCircle(shape, 12, COLORS[tileArray[0]], tileArray[1]);
-            tile.append(shape);
-            continue
-        }
-        if (tileArray[3] === 1) {
-            renderSquare(shape, 12, COLORS[tileArray[0]], tileArray[1]);
-            tile.append(shape);
-            continue
-        }
-        else {
-            renderDiamond(shape, 12, COLORS[tileArray[0]], tileArray[1]);
-            tile.append(shape);
-        }
-    }
+// function createTile(tileId, card) {
+//     for (let i = 0; i <= card[2]; i++) {
+//         const tile = document.getElementById("tile-no-" + tileId);
+//         tile.classList.add(COLORS[card[0]]);
+//         // The following data attribute is helpful when
+//         // constructing the set-array-list on board
+//         tile.dataset.setArray = card.join("");
+//         let shape = document.createElement("div");
+//         shape.classList.add("svg-element")
+//         if (card[3] === 0) {
+//             renderCircle(shape, 12, COLORS[card[0]], card[1]);
+//             tile.append(shape);
+//             continue
+//         }
+//         if (card[3] === 1) {
+//             renderSquare(shape, 12, COLORS[card[0]], card[1]);
+//             tile.append(shape);
+//             continue
+//         }
+//         else {
+//             renderDiamond(shape, 12, COLORS[card[0]], card[1]);
+//             tile.append(shape);
+//         }
+//     }
+// }
 
-}
-
-function boardBuilder() {
-    for (let i = 0; i < 12; i++) {
-        let newTile = setArray.pop();
-        tilesOnBoard.push(newTile);
-        constructSetTile(i, newTile);
-    }
-    console.table(tilesOnBoard);
-    game.buildSetArraysOnBoard();
-}
+// function createBoard() {
+//     for (let i = 0; i < game.NUMBER_OF_TILES; i++) {
+//         let newTile = setArray.pop();
+//         tilesOnBoard.push(newTile);
+//         createTile(i, newTile);
+//     }
+//     console.table(tilesOnBoard);
+//     game.updateCardsOnBoard();
+// }
 
 function activateTiles() {
     const tiles = Array.from(document.getElementsByClassName("tile-container"));
-    // console.log(tiles);
     tiles.forEach(t => {
         t.addEventListener(
             "click",
             (event) => {
                 if (event.target.dataset.state === "selected") {
                     event.target.dataset.state = "idle"
-                    selectedTilesCount--;
+                    game.decSelectedTileCount();
                 } else {
-                    if (selectedTilesCount === 3) {
-                        processToast("You can select 3 tiles only.")
+                    if (game.isSelectedTileCountLimit()) {
+                        processToast("Select 3 tiles only. You can deselect a previously selected tile.")
                         return;
                     }
                     event.target.dataset.state = "selected"
-                    selectedTilesCount++;
+                    game.incSelectedTileCount();
                 }
             }
         )
@@ -188,45 +358,34 @@ function activateTiles() {
     )
 }
 
-// TODO: activateSetButton function does too much. Refactor.
 function activateSetButton() {
     const button = document.getElementById("set-button");
     button.addEventListener(
         "click",
         (event) => {
-            // Check if enough tiles selected
-            if (document.querySelector('[data-state="selected"]') === null) {
-                processToast("Select 3 tiles.")
-                return
-            }
-            // Construct an array of selected tiles
-            const selectedTiles = Array.from(document.querySelectorAll(`[data-state="selected"]`));
-            // Extract the set from each tile;
-            // push the set to setArray, and the index
-            // of the tile to the indexArray.
-            const setArray = new Array();
-            const indexArray = new Array();
-            selectedTiles.forEach(tile => {
-                let indexNo = parseInt(tile.dataset.index);
-                setArray.push(tilesOnBoard[indexNo]);
-                indexArray.push(indexNo);
-            });
-            // selectedTiles, setArray, indexArray will be needed
-            // so send them as parameters so that they need not be
-            // computed again and again.
-            handleSubmit(selectedTiles, setArray, indexArray);
+            handleSubmit();
         }
     )
-
 }
 
-function handleSubmit(selectedTiles, setArray, indexArray) {
-    if (selectedTiles.length < 3) {
-        processToast("Select 3 tiles.")
-        setToastTimer();
-        return
+function handleSubmit() {
+    if (game.selectedTilesCount < 3) {
+        processToast("Select 3 tiles.");
+        return;
     }
-    if (checkSet(setArray)) {
+    const selectedTiles = Array.from(document.querySelectorAll(`[data-state="selected"]`));
+    console.log(selectedTiles);
+    // Extract the set from each tile;
+    // push the set to setArray, and the index
+    // of the tile to the indexArray.
+    const cards = new Array();
+    const indexArray = new Array();
+    selectedTiles.forEach(tile => {
+        let indexNo = parseInt(tile.dataset.index);
+        indexArray.push(indexNo);
+        cards.push(game.cardsOnBoard[indexNo]);
+    });
+    if (game.isSet(cards)) {
         removeTiles(selectedTiles);
         incrementScore();
         setTimeout(() => {
@@ -240,7 +399,7 @@ function handleSubmit(selectedTiles, setArray, indexArray) {
 function removeTiles(selectedTiles) {
     selectedTiles.forEach(tile => {
         tile.classList.add("fade-out");
-        resetSelectedTilesCount();
+        game.resetSelectedTilesCount();
         setTimeout(() => {
             removeAllChildNodes(tile);
             tile.className = '';
@@ -258,22 +417,25 @@ function removeAllChildNodes(parent) {
     }
 }
 
-function resetSelectedTilesCount() {
-    selectedTilesCount = 0;
-}
+// function resetSelectedTilesCount() {
+//     selectedTilesCount = 0;
+// }
 
 function buildNewTiles(selectedTiles, indexArray) {
     selectedTiles.forEach(tile => {
         tile.classList.add("fade-in");
-        let newTile = setArray.pop();
-        let index = indexArray.pop();
-        tilesOnBoard[indexArray] = newTile;
-        constructSetTile(index, newTile);
-        tile.dataset.state = "idle";
-        tile.classList.remove("fade-in");
+        if (game.shuffledDeck.length > 2) {
+            let newTile = game.shuffledDeck.pop();
+            let index = indexArray.pop();
+            // game.cardsOnBoard[indexArray] = newTile;
+            game.createTile(index, newTile);
+            tile.dataset.state = "idle";
+            tile.classList.remove("fade-in");
+        }
     });
-    console.table(tilesOnBoard);
-    console.table(getSet());
+    game.rebuildCardsOnBoard();
+    console.table(game.cardsOnBoard);
+    // console.table(game.getSet());
 }
 
 
@@ -287,10 +449,7 @@ function processToast(message) {
 }
 
 
-createDomElements();
-activateTiles();
-activateSetButton();
-boardBuilder();
+
 
 
 /**
@@ -334,26 +493,26 @@ function combinations(arr, k, prefix = []) {
 }
 
 
-function getSet() {
-    // TODO: It is possible that the 12 tiles do not contain a set
-    // Thus we need to do domething for those cases
-    // If nothing else, so that getSet() does not crash!
+// function getSet() {
+//     // TODO: It is possible that the 12 tiles do not contain a set
+//     // Thus we need to do domething for those cases
+//     // If nothing else, so that getSet() does not crash!
 
-    const h = combinations(tilesOnBoard, 3);
-    const arrayOfSets = h.filter(subArray => checkSet(subArray));
-    const r = Math.floor(Math.random() * arrayOfSets.length);
-    const tilesOnBoardAsStrings = tilesOnBoard.map(array => array.join(""));
-    const indexArray = []
+//     const h = combinations(tilesOnBoard, 3);
+//     const arrayOfSets = h.filter(subArray => checkSet(subArray));
+//     const r = Math.floor(Math.random() * arrayOfSets.length);
+//     const tilesOnBoardAsStrings = tilesOnBoard.map(array => array.join(""));
+//     const indexArray = []
 
-    arrayOfSets[r].forEach(arr => {
-        for (let i = 0; i < tilesOnBoardAsStrings.length; i++) {
-            if (arr.join("") === tilesOnBoardAsStrings[i]) {
-                indexArray.push(i)
-            }
-        }
-    });
-    return indexArray
-}
+//     arrayOfSets[r].forEach(arr => {
+//         for (let i = 0; i < tilesOnBoardAsStrings.length; i++) {
+//             if (arr.join("") === tilesOnBoardAsStrings[i]) {
+//                 indexArray.push(i)
+//             }
+//         }
+//     });
+//     return indexArray
+// }
 
 function incrementScore() {
     const score = document.getElementById("score").textContent
@@ -361,7 +520,7 @@ function incrementScore() {
 }
 
 
-console.table(getSet());
+// console.table(getSet());
 
 
 
@@ -544,7 +703,7 @@ function createTop() {
     scoreLabel.textContent = "Score:";
     scoreboard.append(scoreLabel);
 
-    const score =  document.createElement("div");
+    const score = document.createElement("div");
     score.setAttribute("id", "score");
     score.classList.add("score");
     score.textContent = "0";
