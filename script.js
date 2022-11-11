@@ -1,6 +1,101 @@
 // import { createDomElements } from './js/dom.js';
 // import { renderCircle, renderSquare, renderDiamond } from './js/render.js';
 
+
+Array.prototype.random = function () {
+    return this[Math.floor(Math.random() * this.length)];
+}
+
+// https://stackoverflow.com/a/14853974/1085805
+Array.prototype.equals = function (array) {
+    // if the other array is a falsy value, return
+    if (!array)
+        return false;
+    // if the argument is the same array, we can be sure the contents are same as well
+    if (array === this)
+        return true;
+    // compare lengths - can save a lot of time
+    if (this.length != array.length)
+        return false;
+
+    for (var i = 0, l = this.length; i < l; i++) {
+        // Check if we have nested arrays
+        if (this[i] instanceof Array && array[i] instanceof Array) {
+            // recurse into the nested arrays
+            if (!this[i].equals(array[i]))
+                return false;
+        }
+        else if (this[i] != array[i]) {
+            // Warning - two different object instances will never be equal: {x:20} != {x:20}
+            return false;
+        }
+    }
+    return true;
+}
+
+// ****************************************************************************
+// Utility Functions
+// ****************************************************************************
+function qs(selector, parent = document) {
+    return parent.querySelector(selector)
+}
+
+function qsa(selector, parent = document) {
+    return [...parent.querySelectorAll(selector)]
+}
+
+function gebcn(className) {
+    return Array.from(document.getElementsByClassName(className));
+}
+
+// ****************************************************************************
+
+// stringToArray("2622") --> [2, 6, 2, 2]
+function stringToArray(str) {
+    return str.split("").map(char => parseInt(char))
+}
+
+// TODO: Study and see how the following works.
+// https://stackoverflow.com/a/67473632/1085805
+// toBase(2, 13) --> [1, 1, 0, 1]
+// toBase(3, 5) --> [0, 0, 1, 2]
+function toBase(base, num) {
+    const largest_power = ~~(Math.log(num) / Math.log(base));
+    const result = [0, 0, 0, 0];
+    for (let pow = largest_power; pow >= 0; pow--) {
+        const digit = ~~(num / base ** pow);
+        num -= digit * base ** pow;
+        result.shift();
+        result.push(digit);
+    }
+    return result;
+}
+
+// Nice combination generator.
+// Make sure you understand how it works.
+// https://gist.github.com/xuab/c96bd47769ec459b60db8da4e796a0ff
+function* kSubsets(l, k) {
+    if (k < 1) return yield []
+    for (let i of Array(l.length - k + 1).keys())
+        for (let set of kSubsets(l.slice(i + 1), k - 1))
+            yield [l[i], ...set]
+}
+
+// https://stackoverflow.com/q/43241174/1085805
+// https://stackoverflow.com/a/74115113/1085805
+// TODO: Right now, I don't understand how the following works.
+function combination(arr, k, prefix = []) {
+    if (k == 0) return [prefix];
+    return arr.flatMap((v, i) =>
+        this.combination(arr.slice(i + 1), k - 1, [...prefix, v])
+    );
+}
+
+const zip = (arr, ...arrs) => {
+    return arr.map((val, i) => arrs.reduce((a, arr) => [...a, arr[i]], [val]));
+}
+
+
 class Game {
     // A CARD is a an array of 4 integers where each integer
     // can take the value of 0, 1, or 2. E.g. [1, 0, 2, 0]
@@ -37,46 +132,29 @@ class Game {
 
         this.COLORS = ["color-one", "color-two", "color-three"];
         this.shuffledDeck = this.#shuffleDeck(this.#deck);
-
         this.cardsOnBoard = [];
-        this.board = this.#createBoard();
-        this.selectedTilesCount = 0;
+
+        // The following array function as an intermediary list of cards.
+        // It holds 21 cards. (It has been mathematically proven that
+        // a list of 21 cards must include a set. Thus, there are
+        // arrengements where a 20-card list does not contain a set.)
+        // The idea is to find a set, combine those 3 cards with 9 other
+        // random cards, and then populate the board with those 12 cards.
+        this.iCards = this.buildICards();
+        this.board = this.buildInitCardsOnBoard();
+        // this.selectedTilesCount = 0;
+        // this.selectedCards = [];
+        // this.selectedCardsIndices = [];
     }
 
 
-    rebuildCardsOnBoard() {
-        this.cardsOnBoard = [];
-        let tiles = Array.from(document.getElementsByClassName("tile"));
-        tiles.forEach(tile => {
-            this.cardsOnBoard
-                .push(
-                    tile.dataset.card
-                        .split("")
-                        .map(char => parseInt(char))
-                )
-        });
-    }
 
-    // TODO: Study and see how the following works.
-    // https://stackoverflow.com/a/67473632/1085805
-    // toBase(2, 13) // [1, 1, 0, 1]
-    // toBase(3, 5) // [0, 0, 1, 2]
-    #toBase(base, num) {
-        const largest_power = ~~(Math.log(num) / Math.log(base));
-        const result = [0, 0, 0, 0];
-        for (let pow = largest_power; pow >= 0; pow--) {
-            const digit = ~~(num / base ** pow);
-            num -= digit * base ** pow;
-            result.shift();
-            result.push(digit);
-        }
-        return result;
-    }
+
 
     #buildDeck() {
         const deck = [];
         for (let i = 0; i < 81; i++) {
-            deck.push(this.#toBase(3, i));
+            deck.push(toBase(3, i));
         }
         return deck;
     }
@@ -120,28 +198,119 @@ class Game {
         }
     }
 
-    #createBoard() {
-        for (let i = 0; i < this.NUMBER_OF_TILES; i++) {
+    // #populateBoard() {
+    //     for (let i = 0; i < this.NUMBER_OF_TILES; i++) {
+    //         let card = this.shuffledDeck.pop();
+    //         this.createTile(i, card);
+    //         this.cardsOnBoard.push(card);
+    //     }
+    //     console.table(this.cardsOnBoard);
+    // }
+
+    buildICards() {
+        const cards = [];
+        for (let i = 0; i < 21; i++) {
             let card = this.shuffledDeck.pop();
-            this.createTile(i, card);
-            this.cardsOnBoard.push(card);
+            cards.push(card);
         }
-        console.table(this.cardsOnBoard);
+        return cards;
     }
 
-    // https://stackoverflow.com/q/43241174/1085805
-    // https://stackoverflow.com/a/74115113/1085805
-    // TODO: Right now, I don't understand how the following works.
-    combinations(arr, k, prefix = []) {
-        if (k == 0) return [prefix];
-        return arr.flatMap((v, i) =>
-            this.combinations(arr.slice(i + 1), k - 1, [...prefix, v])
-        );
+    /*
+    We need to maintain 12 cards in iCards. (As long as we can, of course.)
+    When a valid Set is submitted, we will have 9 cards on board, and with the
+    12 cards in iCards, we can: (1) check whether the remaining tiles include
+    a set; if so, we just end 3 more cards to the board; else (2) we can check
+    which 3 cards addition will ensure a set. The problem we need to find
+    a neat solution is that we may need 1, 2, or 3 specific cards from iCards.
+    I think the *kSubesets function generator will handle that.
+    */
+    rebuildICards() {
+        if (this.shuffledDeck.length > 0) {
+            for (let i = 0; i < 3; i++) {
+                let card = this.shuffledDeck.pop();
+                this.iCards.push(card);
+            }
+        }
+        // tilesOnBoard
     }
 
-    zip = (arr, ...arrs) => {
-        return arr.map((val, i) => arrs.reduce((a, arr) => [...a, arr[i]], [val]));
+
+
+    buildInitCardsOnBoard() {
+        let set = []
+        const combGenerator = kSubsets(this.iCards, 3);
+        while (true) {
+            let comb = combGenerator.next().value;
+            if (this.isSet(comb)) {
+                this.cardsOnBoard.push(...comb)
+                set = comb
+                // console.log("Set found!" + comb);
+                break;
+            }
+        }
+        // console.log(combs.next().value);
+        // return combs;
+        // this.cardsOnBoard =+ set;
+        // console.table("iCards:" + this.iCards);
+        // console.table(this.iCards);
+        // console.table("Cards on board:");
+        // console.table(this.cardsOnBoard);
+
+        // https://stackoverflow.com/a/20690490/1085805
+        // Make the following an Array.prototype method
+        this.iCards = this.iCards.filter(item => !set.includes(item))
+
+        // console.table("iCards after arrayRemove: ");
+        // console.table(this.iCards);
+
+        // The true part is to make sure that iCards in not empty
+        let counter = 1
+        while (true && this.cardsOnBoard.length < 12) {
+            let card = this.iCards.pop();
+            this.cardsOnBoard.push(card);
+            counter++;
+        }
+
+        // console.table("Cards on board populated:");
+        // console.table(this.cardsOnBoard);
+
+        // console.table("iCards after arrayRemove: ");
+        // console.table(this.iCards);
+
+        // Right now, the first three cards in cardsOnBoard
+        // form a set, thus we need to shuffle it before
+        // populating the board.
+        this.#shuffleDeck(this.cardsOnBoard);
+        // console.table("Cards on board shuffled:");
+        // console.table(this.cardsOnBoard);
+
+        // Now we populate the board.
+        for (let i = 0; i < this.cardsOnBoard.length; i++) {
+            this.createTile(i, this.cardsOnBoard[i]);
+        }
+
+        this.rebuildICards();
+        // console.table(this.iCards);
     }
+
+
+    rebuildCardsOnBoard() {
+        this.cardsOnBoard = [];
+        let tiles = Array.from(document.getElementsByClassName("tile"));
+        tiles.forEach(tile => {
+            this.cardsOnBoard
+                .push(
+                    tile.dataset.card
+                        .split("")
+                        .map(char => parseInt(char))
+                )
+        });
+    }
+
+
+
+
 
     isSet(arr) {
         // Zip the three tiles.
@@ -153,7 +322,7 @@ class Game {
         // According to the rules, a set forms, if each array in the
         // zipped either contains three same elements, or three distinct
         // elements.
-        return this.zip(arr[0], arr[1], arr[2])
+        return zip(arr[0], arr[1], arr[2])
             // Convert each element, which is an Array
             // to a Set, thus eliminate duplicates.
             .map(array => new Set(array))
@@ -170,7 +339,7 @@ class Game {
         // TODO: It is possible that the 12 tiles do not contain a set
         // Thus we need to do domething for those cases
         // If nothing else, so that getSet() does not crash!
-        const combs = this.combinations(this.cardsOnBoard, 3);
+        const combs = combination(this.cardsOnBoard, 3);
         // console.log(comb);
         const validSets = combs.filter(comb => this.isSet(comb));
         // console.table(validSets)
@@ -211,7 +380,7 @@ activateTiles();
 activateSetButton();
 // createBoard();
 const game = new Game();
-console.table(game.getSet());
+console.log("Set: " + game.getSet());
 
 // const UNIT = 12;
 // const COLORS = ["color-one", "color-two", "color-three"]
@@ -239,42 +408,13 @@ function toBase(base, num) {
     return result;
 }
 
-// TODO: I don't understand how the following works
-// https://gist.github.com/renaudtertrais/25fc5a2e64fe5d0e86894094c6989e10
-const zip = (arr, ...arrs) => {
-    return arr.map((val, i) => arrs.reduce((a, arr) => [...a, arr[i]], [val]));
-}
+// // TODO: I don't understand how the following works
+// // https://gist.github.com/renaudtertrais/25fc5a2e64fe5d0e86894094c6989e10
+// const zip = (arr, ...arrs) => {
+//     return arr.map((val, i) => arrs.reduce((a, arr) => [...a, arr[i]], [val]));
+// }
 
-Array.prototype.random = function () {
-    return this[Math.floor(Math.random() * this.length)];
-}
 
-// https://stackoverflow.com/a/14853974/1085805
-Array.prototype.equals = function (array) {
-    // if the other array is a falsy value, return
-    if (!array)
-        return false;
-    // if the argument is the same array, we can be sure the contents are same as well
-    if (array === this)
-        return true;
-    // compare lengths - can save a lot of time
-    if (this.length != array.length)
-        return false;
-
-    for (var i = 0, l = this.length; i < l; i++) {
-        // Check if we have nested arrays
-        if (this[i] instanceof Array && array[i] instanceof Array) {
-            // recurse into the nested arrays
-            if (!this[i].equals(array[i]))
-                return false;
-        }
-        else if (this[i] != array[i]) {
-            // Warning - two different object instances will never be equal: {x:20} != {x:20}
-            return false;
-        }
-    }
-    return true;
-}
 
 
 
@@ -335,28 +475,67 @@ shuffleArray(setArray);
 //     game.updateCardsOnBoard();
 // }
 
+// function activateTiles() {
+//     const tiles = Array.from(document.getElementsByClassName("tile-container"));
+//     tiles.forEach(t => {
+//         t.addEventListener(
+//             "click",
+//             (event) => {
+//                 if (event.target.dataset.state === "selected") {
+//                     event.target.dataset.state = "idle"
+//                     game.decSelectedTileCount();
+//                 } else {
+//                     if (game.isSelectedTileCountLimit()) {
+//                         processToast("Select 3 tiles only. You can deselect a previously selected tile.")
+//                         return;
+//                     }
+//                     event.target.dataset.state = "selected"
+//                     game.incSelectedTileCount();
+//                 }
+//             }
+//         )
+//     }
+//     )
+// }
+
+
+
+
+
+
+
 function activateTiles() {
-    const tiles = Array.from(document.getElementsByClassName("tile-container"));
-    tiles.forEach(t => {
-        t.addEventListener(
+    // const tiles = gebcn("tile");
+    gebcn("tile").forEach(tile => {
+        tile.addEventListener(
             "click",
             (event) => {
                 if (event.target.dataset.state === "selected") {
                     event.target.dataset.state = "idle"
-                    game.decSelectedTileCount();
+                    return;
+                }
+                if (qsa('[data-state="selected"]').length === 3) {
+                    processToast("Select 3 cards only.")
+                    return;
                 } else {
-                    if (game.isSelectedTileCountLimit()) {
-                        processToast("Select 3 tiles only. You can deselect a previously selected tile.")
-                        return;
-                    }
                     event.target.dataset.state = "selected"
-                    game.incSelectedTileCount();
+                    // Before, I thought it would be better if we had
+                    // stored the card values, index, etc. of the selected
+                    // card so that we do not need to do certain computations
+                    // over and over again. Then I realized that was not such
+                    // a good idea, because when the user deselects a tile,
+                    // I was just using .push() method from those stored arrays;
+                    // but what if user selects tileA, then tileB, THEN
+                    // deselects tileA? Big problem! We can sort it out, but
+                    // I don't think it is worth it.
                 }
             }
         )
     }
     )
 }
+
+
 
 function activateSetButton() {
     const button = document.getElementById("set-button");
@@ -369,37 +548,112 @@ function activateSetButton() {
 }
 
 function handleSubmit() {
-    if (game.selectedTilesCount < 3) {
-        processToast("Select 3 tiles.");
+    /*
+(1) Remove the tiles.
+(2) Check whether there is a valid Set on board. If there is;
+    (a) if iCards not empty, get 3 cards from iCards and populate the board
+    (b) if shuffledDeck is not empty, rebuild iCards
+(3) If not;
+    (a) check if iCards empty; if so gameOver()
+    (b) check if iCards has 9 cards, if so we have Set for certain
+    (c) whether iCards has 9 cards or not, get 3-card comb via *kSubsets
+        until there is a Set; if there is no Set then gameOver()
+*/
+
+    // const selectedTiles = Array.from(document.querySelectorAll(`[data-state="selected"]`));
+    // selectedTiles.forEach(tile => {
+    //     tile.classList.add("fade-out");selectedTiles.length
+    //     tile.dataset.state = "empty";
+    // });
+
+
+    // if (game.selectedTilesCount < 3) {
+    //     processToast("Select 3 cards.");
+    //     return;
+    // }
+    // const selectedTiles = Array.from(document.querySelectorAll('[data-state="selected"]'));
+
+    const selectedTiles = qsa('[data-state="selected"]');
+
+    if (selectedTiles.length < 3) {
+        processToast("Select 3 cards.");
         return;
     }
-    const selectedTiles = Array.from(document.querySelectorAll(`[data-state="selected"]`));
-    console.log(selectedTiles);
-    // Extract the set from each tile;
-    // push the set to setArray, and the index
-    // of the tile to the indexArray.
-    const cards = new Array();
-    const indexArray = new Array();
+
+    let selectedCards = [];
+    let cardIndices = [];
     selectedTiles.forEach(tile => {
-        let indexNo = parseInt(tile.dataset.index);
-        indexArray.push(indexNo);
-        cards.push(game.cardsOnBoard[indexNo]);
+        cardIndices.push(parseInt(tile.dataset.index));
+        selectedCards.push(stringToArray(tile.dataset.card));
     });
-    if (game.isSet(cards)) {
-        removeTiles(selectedTiles);
-        incrementScore();
-        setTimeout(() => {
-            buildNewTiles(selectedTiles, indexArray);
-        }, 1500);
-    } else {
-        processToast("Not a valid set.")
+
+    if (!game.isSet(selectedCards)) {
+        processToast("Not a valid Set.")
+        return;
     }
+
+    // At this point we know that a valid Set is submitted.
+    removeTiles(selectedTiles);
+    selectedTiles.forEach(tile => {
+        // console.log("I am here!")
+        tile.dataset.state = "empty";
+        console.table("tile: " + tile.dataset.state);
+    });
+
+    // Check if there is a Set in remaning tiles
+    const remainingTiles = qsa('[data-state="idle"]');
+    const remainingCards = [];
+    remainingTiles.forEach(tile => {
+        // cardIndices.push(parseInt(tile.dataset.index));
+        remainingCards.push(stringToArray(tile.dataset.card));
+    });
+    const combGenerator = kSubsets(remainingCards, 3);
+    let setFound = []
+
+    // https://dev.to/manlycoffee/elegant-javascript-with-generators-1720
+    for (let comb of combGenerator) {
+        if (game.isSet(comb)) {
+            setFound.push(comb);
+            console.log("Set found in remaing cards: " + setFound);
+            break;
+        }
+      }
+    // while (combGenerator.done = false) {
+    //     let comb = combGenerator.next().value;
+    //     console.table("Comb: " + comb)
+    //     if (game.isSet(comb)) {
+    //         // this.cardsOnBoard.push(...comb)
+    //         setFound.push(comb);
+    //         console.log("Set found in remaing cards: " + setFound);
+    //         break;
+    //     }
+    // }
+    if (setFound.length === 0) {console.log("No set found in remaing cards.")};
+
+
+
+    // selectedTiles.forEach(tile => {
+    //     tile.dataset.state = "idle";
+    //     tile.dataset.card = "";
+    // });
+    // console.log("Set in remaining tiles: " + game.isSet(remainingTiles));
+
+
+    // if (game.isSet(remainingTiles) {
+    //     removeTiles(selectedTiles);
+    //     incrementScore();
+    //     setTimeout(() => {
+    //         buildNewTiles(selectedTiles, game.indexArray);
+    //     }, 1500);
+    // } else {
+    //     processToast("Not a valid Set.")
+    // }
 }
 
 function removeTiles(selectedTiles) {
     selectedTiles.forEach(tile => {
         tile.classList.add("fade-out");
-        game.resetSelectedTilesCount();
+        // game.resetSelectedTilesCount();
         setTimeout(() => {
             removeAllChildNodes(tile);
             tile.className = '';
@@ -408,7 +662,6 @@ function removeTiles(selectedTiles) {
     });
 }
 
-4
 // https://stackoverflow.com/q/3955229/1085805
 // See the above link for a discussion.
 function removeAllChildNodes(parent) {
@@ -417,9 +670,6 @@ function removeAllChildNodes(parent) {
     }
 }
 
-// function resetSelectedTilesCount() {
-//     selectedTilesCount = 0;
-// }
 
 function buildNewTiles(selectedTiles, indexArray) {
     selectedTiles.forEach(tile => {
@@ -437,6 +687,28 @@ function buildNewTiles(selectedTiles, indexArray) {
     console.table(game.cardsOnBoard);
     // console.table(game.getSet());
 }
+
+
+function rebuildBoard() {
+    /*
+    (1) Remove the tiles.
+    (2) Check whether there is a valid Set on board. If there is;
+        (a) if iCards not empty, get 3 cards from iCards and populate the board
+        (b) if shuffledDeck is not empty, rebuild iCards
+    (3) If not;
+        (a) check if iCards empty; if so gameOver()
+        (b) check if iCards has 9 cards, if so we have Set for certain
+        (c) whether iCards has 9 cards or not, get 3-card comb via *kSubsets
+            until there is a Set; if there is no Set then gameOver()
+    */
+
+}
+
+
+
+
+
+
 
 
 function processToast(message) {
@@ -736,17 +1008,18 @@ function createTiles() {
         tileRow.classList.add("row-container");
         board.append(tileRow);
         for (let clmIndex = 0; clmIndex < 4; clmIndex++) {
-            const tileContainer = document.createElement("div");
-            tileContainer.dataset.state = "idle";
-            tileContainer.classList.add("tile-container");
+            // const tileContainer = document.createElement("div");
+            // tileContainer.dataset.state = "idle";
+            // tileContainer.classList.add("tile-container");
 
-            tileRow.append(tileContainer);
+            // tileRow.append(tileContainer);
             let tile = document.createElement("div");
             tile.setAttribute("id", "tile-no-" + tileCounter);
             tile.classList.add("tile");
+            tile.dataset.state = "idle";
             tile.dataset.index = tileCounter;
             tileCounter++;
-            tileContainer.append(tile);
+            tileRow.append(tile);
         }
     }
 }
