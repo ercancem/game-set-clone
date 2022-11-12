@@ -1,6 +1,6 @@
 // import { createDomElements } from './js/dom.js';
 // import { renderCircle, renderSquare, renderDiamond } from './js/render.js';
-
+const pause = _ => new Promise(resolve => setTimeout(resolve, _));
 
 Array.prototype.random = function () {
     return this[Math.floor(Math.random() * this.length)];
@@ -33,9 +33,16 @@ Array.prototype.equals = function (array) {
     return true;
 }
 
-// ****************************************************************************
-// Utility Functions
-// ****************************************************************************
+// a = ["a", "b", "c"], b = ["b", "c"]
+// a = a.deleteItems(b) --> ["a"]
+Array.prototype.deleteItems = function (delArray) {
+    return this.filter(item => !delArray.includes(item))
+}
+
+
+/* -------------------------------------------------------------------------- */
+/*                              Utility Functions                             */
+/* -------------------------------------------------------------------------- */
 function qs(selector, parent = document) {
     return parent.querySelector(selector)
 }
@@ -47,8 +54,7 @@ function qsa(selector, parent = document) {
 function gebcn(className) {
     return Array.from(document.getElementsByClassName(className));
 }
-
-// ****************************************************************************
+/* -------------------------------------------------------------------------- */
 
 // stringToArray("2622") --> [2, 6, 2, 2]
 function stringToArray(str) {
@@ -132,7 +138,7 @@ class Game {
 
         this.COLORS = ["color-one", "color-two", "color-three"];
         this.shuffledDeck = this.#shuffleDeck(this.#deck);
-        this.cardsOnBoard = [];
+        // this.cardsOnBoard = [];
 
         // The following array function as an intermediary list of cards.
         // It holds 21 cards. (It has been mathematically proven that
@@ -141,10 +147,11 @@ class Game {
         // The idea is to find a set, combine those 3 cards with 9 other
         // random cards, and then populate the board with those 12 cards.
         this.iCards = this.buildICards();
-        this.board = this.buildInitCardsOnBoard();
+        // this.board = this.buildInitCardsOnBoard();
         // this.selectedTilesCount = 0;
         // this.selectedCards = [];
         // this.selectedCardsIndices = [];
+        this.initilizeBoard();
     }
 
 
@@ -179,6 +186,7 @@ class Game {
             // The following data attribute is helpful when
             // constructing the set-array-list on board
             tile.dataset.card = card.join("");
+            tile.dataset.state = "idle";
             let shape = document.createElement("div");
             shape.classList.add("svg-element")
             if (card[3] === 0) {
@@ -197,15 +205,6 @@ class Game {
             }
         }
     }
-
-    // #populateBoard() {
-    //     for (let i = 0; i < this.NUMBER_OF_TILES; i++) {
-    //         let card = this.shuffledDeck.pop();
-    //         this.createTile(i, card);
-    //         this.cardsOnBoard.push(card);
-    //     }
-    //     console.table(this.cardsOnBoard);
-    // }
 
     buildICards() {
         const cards = [];
@@ -226,91 +225,59 @@ class Game {
     I think the *kSubesets function generator will handle that.
     */
     rebuildICards() {
-        if (this.shuffledDeck.length > 0) {
+        const shuffledDeck = this.shuffledDeck.length > 0;
+        const iCards = this.iCards.length < 12;
+        if (shuffledDeck && iCards) {
             for (let i = 0; i < 3; i++) {
                 let card = this.shuffledDeck.pop();
                 this.iCards.push(card);
             }
         }
-        // tilesOnBoard
     }
 
-
-
-    buildInitCardsOnBoard() {
-        let set = []
+    initilizeBoard() {
+        let set = [];
+        let initCards = [];
         const combGenerator = kSubsets(this.iCards, 3);
         while (true) {
             let comb = combGenerator.next().value;
             if (this.isSet(comb)) {
-                this.cardsOnBoard.push(...comb)
+                initCards.push(...comb)
                 set = comb
-                // console.log("Set found!" + comb);
                 break;
             }
         }
-        // console.log(combs.next().value);
-        // return combs;
-        // this.cardsOnBoard =+ set;
-        // console.table("iCards:" + this.iCards);
-        // console.table(this.iCards);
-        // console.table("Cards on board:");
-        // console.table(this.cardsOnBoard);
 
         // https://stackoverflow.com/a/20690490/1085805
         // Make the following an Array.prototype method
         this.iCards = this.iCards.filter(item => !set.includes(item))
 
-        // console.table("iCards after arrayRemove: ");
-        // console.table(this.iCards);
-
         // The true part is to make sure that iCards in not empty
         let counter = 1
-        while (true && this.cardsOnBoard.length < 12) {
+        while (true && initCards.length < 12) {
             let card = this.iCards.pop();
-            this.cardsOnBoard.push(card);
+            initCards.push(card);
             counter++;
         }
-
-        // console.table("Cards on board populated:");
-        // console.table(this.cardsOnBoard);
-
-        // console.table("iCards after arrayRemove: ");
-        // console.table(this.iCards);
 
         // Right now, the first three cards in cardsOnBoard
         // form a set, thus we need to shuffle it before
         // populating the board.
-        this.#shuffleDeck(this.cardsOnBoard);
+        this.#shuffleDeck(initCards);
         // console.table("Cards on board shuffled:");
-        // console.table(this.cardsOnBoard);
+        // console.table(initCards);
 
         // Now we populate the board.
-        for (let i = 0; i < this.cardsOnBoard.length; i++) {
-            this.createTile(i, this.cardsOnBoard[i]);
+        for (let i = 0; i < initCards.length; i++) {
+            this.createTile(i, initCards[i]);
         }
 
         this.rebuildICards();
+        // console.log("iCards after init:")
         // console.table(this.iCards);
+        // console.log("cards on board:")
+        // console.table(initCards);
     }
-
-
-    rebuildCardsOnBoard() {
-        this.cardsOnBoard = [];
-        let tiles = Array.from(document.getElementsByClassName("tile"));
-        tiles.forEach(tile => {
-            this.cardsOnBoard
-                .push(
-                    tile.dataset.card
-                        .split("")
-                        .map(char => parseInt(char))
-                )
-        });
-    }
-
-
-
-
 
     isSet(arr) {
         // Zip the three tiles.
@@ -336,20 +303,17 @@ class Game {
     }
 
     getSet() {
-        // TODO: It is possible that the 12 tiles do not contain a set
-        // Thus we need to do domething for those cases
-        // If nothing else, so that getSet() does not crash!
-        const combs = combination(this.cardsOnBoard, 3);
-        // console.log(comb);
+        const cards = cardsOnBoard()
+        const combs = combination(cards, 3);
         const validSets = combs.filter(comb => this.isSet(comb));
-        // console.table(validSets)
+        // console.table(validSets);
         const rand = Math.floor(Math.random() * validSets.length);
-        const tilesOnBoardAsStrings = this.cardsOnBoard.map(array => array.join(""));
-        const indexArray = []
+        const cardsAsString = cards.map(array => array.join(""));
+        let indexArray = []
 
         validSets[rand].forEach(arr => {
-            for (let i = 0; i < tilesOnBoardAsStrings.length; i++) {
-                if (arr.join("") === tilesOnBoardAsStrings[i]) {
+            for (let i = 0; i < cardsAsString.length; i++) {
+                if (arr.join("") === cardsAsString[i]) {
                     indexArray.push(i)
                 }
             }
@@ -371,6 +335,11 @@ class Game {
 
     isSelectedTileCountLimit() {
         return this.selectedTilesCount === 3;
+    }
+
+    incrementScore() {
+        const score = document.getElementById("score").textContent
+        document.getElementById("score").textContent = parseInt(score) + 3;
     }
 
 }
@@ -498,7 +467,14 @@ shuffleArray(setArray);
 //     )
 // }
 
-
+function cardsOnBoard() {
+    cards = []
+    tiles = gebcn("tile");
+    tiles.forEach(tile => {
+        cards.push(stringToArray(tile.dataset.card));
+    });
+    return cards;
+}
 
 
 
@@ -519,15 +495,6 @@ function activateTiles() {
                     return;
                 } else {
                     event.target.dataset.state = "selected"
-                    // Before, I thought it would be better if we had
-                    // stored the card values, index, etc. of the selected
-                    // card so that we do not need to do certain computations
-                    // over and over again. Then I realized that was not such
-                    // a good idea, because when the user deselects a tile,
-                    // I was just using .push() method from those stored arrays;
-                    // but what if user selects tileA, then tileB, THEN
-                    // deselects tileA? Big problem! We can sort it out, but
-                    // I don't think it is worth it.
                 }
             }
         )
@@ -548,107 +515,211 @@ function activateSetButton() {
 }
 
 function handleSubmit() {
-    /*
-(1) Remove the tiles.
-(2) Check whether there is a valid Set on board. If there is;
-    (a) if iCards not empty, get 3 cards from iCards and populate the board
-    (b) if shuffledDeck is not empty, rebuild iCards
-(3) If not;
-    (a) check if iCards empty; if so gameOver()
-    (b) check if iCards has 9 cards, if so we have Set for certain
-    (c) whether iCards has 9 cards or not, get 3-card comb via *kSubsets
-        until there is a Set; if there is no Set then gameOver()
-*/
-
-    // const selectedTiles = Array.from(document.querySelectorAll(`[data-state="selected"]`));
-    // selectedTiles.forEach(tile => {
-    //     tile.classList.add("fade-out");selectedTiles.length
-    //     tile.dataset.state = "empty";
-    // });
-
-
-    // if (game.selectedTilesCount < 3) {
-    //     processToast("Select 3 cards.");
-    //     return;
-    // }
-    // const selectedTiles = Array.from(document.querySelectorAll('[data-state="selected"]'));
 
     const selectedTiles = qsa('[data-state="selected"]');
 
+    /* -------- Has the user selected the required number of cards? --------- */
     if (selectedTiles.length < 3) {
         processToast("Select 3 cards.");
         return;
     }
+    /* ---------------------------------------------------------------------- */
 
+    /* -------- Yes. Process selectedTiles for further computations. -------- */
     let selectedCards = [];
     let cardIndices = [];
     selectedTiles.forEach(tile => {
         cardIndices.push(parseInt(tile.dataset.index));
         selectedCards.push(stringToArray(tile.dataset.card));
     });
+    /* ---------------------------------------------------------------------- */
 
+    /* ---------------- Does the selection form a valid Set? ---------------- */
     if (!game.isSet(selectedCards)) {
         processToast("Not a valid Set.")
         return;
     }
+    /* ---------------------------------------------------------------------- */
 
-    // At this point we know that a valid Set is submitted.
-    removeTiles(selectedTiles);
-    selectedTiles.forEach(tile => {
-        // console.log("I am here!")
-        tile.dataset.state = "empty";
-        console.table("tile: " + tile.dataset.state);
-    });
+    /* ------ We have a valid Set. First order of business: incScore() ------ */
+    game.incrementScore();
+    /* ---------------------------------------------------------------------- */
 
-    // Check if there is a Set in remaning tiles
-    const remainingTiles = qsa('[data-state="idle"]');
-    const remainingCards = [];
+    /* -------------- Rebuild iCards; check whether it is empty ------------- */
+    game.rebuildICards();
+    // console.log("iCards after rebuild:");
+    // console.table(game.iCards);
+    iCards = game.iCards.length != 0;
+    /* ---------------------------------------------------------------------- */
+
+
+    /* ------------------------ We have a valid Set. ------------------------ */
+    /*
+    From here on, we move with respect to whether there are more cards to come
+    and whether the remaining tiles on board include a Set.
+    (1) If iCards empty:
+        (a) and no Set in remaining tiles --> GameOver().
+        (b) but we have a Set --> keep playing without rebuilding the board.
+
+    (2) If iCards !empty:
+        (a) if we've a Set in the remaining tiles, just get 3 cards from iCards
+        (b) if not, check whether there is a Set at all. (Recall that if iCards
+            has 9 cards, then we are ensured a Set, else it is possible that
+            there is no Set.) If no Set --> GameOver()
+        (c) if there is a Set, get those 3 cards.
+            Side Note: It is BARELY possible that no two-card combination in
+            iCards make a Set, thus the 3 new cards form a Set. In such a case
+            perhaps it is better to shuffle the board; but I think that is a
+            bad idea for several reasons. Short of the long: just not worth it.
+
+    Let us know whether iCards is empty or not; and check whether the
+    remaining tiles have a Set and store those two Boolean values.
+    */
+    /* ----------------------------------------------------------------------- */
+
+
+    /* -------------- Check if there is a Set in remaning tiles ------------- */
+    let = setFoundInRemainingTiles = false;
+    let remainingTiles = qsa('[data-state="idle"]');
+    let remainingCards = [];
     remainingTiles.forEach(tile => {
-        // cardIndices.push(parseInt(tile.dataset.index));
         remainingCards.push(stringToArray(tile.dataset.card));
     });
-    const combGenerator = kSubsets(remainingCards, 3);
-    let setFound = []
+    let rcCombGenerator = kSubsets(remainingCards, 3);
 
-    // https://dev.to/manlycoffee/elegant-javascript-with-generators-1720
-    for (let comb of combGenerator) {
+    for (let comb of rcCombGenerator) {
         if (game.isSet(comb)) {
-            setFound.push(comb);
-            console.log("Set found in remaing cards: " + setFound);
+            setFoundInRemainingTiles = true;
+            // console.log("comb: " + comb);
             break;
         }
-      }
-    // while (combGenerator.done = false) {
-    //     let comb = combGenerator.next().value;
-    //     console.table("Comb: " + comb)
-    //     if (game.isSet(comb)) {
-    //         // this.cardsOnBoard.push(...comb)
-    //         setFound.push(comb);
-    //         console.log("Set found in remaing cards: " + setFound);
-    //         break;
-    //     }
+    }
+    console.log("Set found in remaning tiles: " + setFoundInRemainingTiles);
+    /* ---------------------------------------------------------------------- */
+
+
+    /* ----------- If no more cards and no more Set --> GameOver() ---------- */
+    // TODO: we need to remove the last 3 tiles from last Set
+    if (!iCards && !setFoundInRemainingTiles) {
+        gameOver();
+        return;
+    }
+    /* ---------------------------------------------------------------------- */
+
+
+    /* --------------------- iCards empty BUT Set found --------------------- */
+    if (!iCards && setFoundInRemainingTiles) {
+        selectedTiles.forEach(tile => {
+            tile.classList.add("fade-out");
+            setTimeout(() => {
+                removeAllChildNodes(tile);
+                // tile.className = '';
+                // tile.classList.add("tile");
+                // let newCard = game.iCards.pop();
+                // game.createTile(parseInt(tile.dataset.index), newCard)
+                // tile.classList.add("fade-in");
+                // setTimeout(() => { tile.classList.remove("fade-in") }, 1500);
+            }, 1500);
+        });
+        setTimeout(() => { console.log("Set1: " + game.getSet()) }, 1500);
+        return;
+    }
+
+    /* ------------------- iCards not empty AND Set found ------------------- */
+    if (setFoundInRemainingTiles) {
+        selectedTiles.forEach(tile => {
+            tile.classList.add("fade-out");
+            setTimeout(() => {
+                removeAllChildNodes(tile);
+                tile.className = '';
+                tile.classList.add("tile");
+                let newCard = game.iCards.pop();
+                game.createTile(parseInt(tile.dataset.index), newCard)
+                tile.classList.add("fade-in");
+                setTimeout(() => { tile.classList.remove("fade-in") }, 1500);
+            }, 1500);
+        });
+        setTimeout(() => { console.log("Set2: " + game.getSet()) }, 1500);
+        return;
+    }
+
+    /* ----------------- No Set, then try combs from iCards ----------------- */
+    let setFound = false;
+    let suitableComb = []
+    let iCardsCombGenerator = kSubsets(game.iCards, 3);
+    outerLoop:
+    for (let iComb of iCardsCombGenerator) {
+        let tempArray = [...remainingCards].concat(iComb);
+        let combGenerator = kSubsets(tempArray, 3);
+        for (let comb of combGenerator) {
+            if (game.isSet(comb)) {
+                suitableComb = [...iComb]
+                break outerLoop;
+            }
+        }
+    }
+    /* --------------------- If no more Set, gameOver() --------------------- */
+    // if (!setFound) {
+    //     gameOver();
     // }
-    if (setFound.length === 0) {console.log("No set found in remaing cards.")};
+    /* ---------------------------------------------------------------------- */
 
-
-
-    // selectedTiles.forEach(tile => {
-    //     tile.dataset.state = "idle";
-    //     tile.dataset.card = "";
-    // });
-    // console.log("Set in remaining tiles: " + game.isSet(remainingTiles));
-
-
-    // if (game.isSet(remainingTiles) {
-    //     removeTiles(selectedTiles);
-    //     incrementScore();
-    //     setTimeout(() => {
-    //         buildNewTiles(selectedTiles, game.indexArray);
-    //     }, 1500);
-    // } else {
-    //     processToast("Not a valid Set.")
-    // }
+    /* ---------------------- We must have Set from iCards ---------------------- */
+    // console.log("suitable comb: " + suitableComb);
+    game.iCards = game.iCards.deleteItems(suitableComb);
+    // console.log("selected tiles" + selectedTiles);
+    selectedTiles.forEach(tile => {
+        tile.classList.add("fade-out");
+        setTimeout(() => {
+            removeAllChildNodes(tile);
+            tile.className = '';
+            tile.classList.add("tile");
+            let newCard = suitableComb.pop();
+            game.createTile(parseInt(tile.dataset.index), newCard)
+            // console.log("dataset.index" + tile.dataset.index);
+            // console.log("newCard: " + newCard);
+            tile.classList.add("fade-in");
+            setTimeout(() => { tile.classList.remove("fade-in") }, 1500);
+        }, 1500);
+    });
+    setTimeout(() => { console.log("Set3: " + game.getSet()) }, 1500);
 }
+
+
+
+
+// async function removeTiles(tile) {
+
+//     await pause(1500);
+//     removeAllChildNodes(tile);
+//     tile.className = '';
+//     tile.classList.add("tile");
+//     let newCard = game.iCards.pop();
+//     console.log(newCard);
+//     console.log(parseInt(tile.dataset.index));
+//     game.createTile(parseInt(tile.dataset.index), newCard)
+//     tile.classList.add("fade-in");
+
+//     await pause(3000);
+//     tile.classList.remove("fade-in")
+
+// }
+
+
+
+
+
+function removeFadeIn() {
+    tiles = gebcn("fade-in")
+    tiles.forEach(tile => {
+        tile.classList.remove("fade-in");
+    });
+}
+
+
+
+
+
 
 function removeTiles(selectedTiles) {
     selectedTiles.forEach(tile => {
@@ -656,6 +727,8 @@ function removeTiles(selectedTiles) {
         // game.resetSelectedTilesCount();
         setTimeout(() => {
             removeAllChildNodes(tile);
+            // Remove the classes and assign "tile" class again;
+            // else the tile will have multiple color classes.
             tile.className = '';
             tile.classList.add("tile");
         }, 1500);
@@ -689,26 +762,6 @@ function buildNewTiles(selectedTiles, indexArray) {
 }
 
 
-function rebuildBoard() {
-    /*
-    (1) Remove the tiles.
-    (2) Check whether there is a valid Set on board. If there is;
-        (a) if iCards not empty, get 3 cards from iCards and populate the board
-        (b) if shuffledDeck is not empty, rebuild iCards
-    (3) If not;
-        (a) check if iCards empty; if so gameOver()
-        (b) check if iCards has 9 cards, if so we have Set for certain
-        (c) whether iCards has 9 cards or not, get 3-card comb via *kSubsets
-            until there is a Set; if there is no Set then gameOver()
-    */
-
-}
-
-
-
-
-
-
 
 
 function processToast(message) {
@@ -718,6 +771,10 @@ function processToast(message) {
     setTimeout(() => {
         toast.style.visibility = "hidden";
     }, 1500);
+}
+
+function gameOver() {
+    console.log("GAME OVER!!")
 }
 
 
@@ -763,39 +820,6 @@ function combinations(arr, k, prefix = []) {
         combinations(arr.slice(i + 1), k - 1, [...prefix, v])
     );
 }
-
-
-// function getSet() {
-//     // TODO: It is possible that the 12 tiles do not contain a set
-//     // Thus we need to do domething for those cases
-//     // If nothing else, so that getSet() does not crash!
-
-//     const h = combinations(tilesOnBoard, 3);
-//     const arrayOfSets = h.filter(subArray => checkSet(subArray));
-//     const r = Math.floor(Math.random() * arrayOfSets.length);
-//     const tilesOnBoardAsStrings = tilesOnBoard.map(array => array.join(""));
-//     const indexArray = []
-
-//     arrayOfSets[r].forEach(arr => {
-//         for (let i = 0; i < tilesOnBoardAsStrings.length; i++) {
-//             if (arr.join("") === tilesOnBoardAsStrings[i]) {
-//                 indexArray.push(i)
-//             }
-//         }
-//     });
-//     return indexArray
-// }
-
-function incrementScore() {
-    const score = document.getElementById("score").textContent
-    document.getElementById("score").textContent = parseInt(score) + 3;
-}
-
-
-// console.table(getSet());
-
-
-
 
 
 
