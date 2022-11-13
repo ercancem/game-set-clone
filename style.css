@@ -90,19 +90,32 @@
     /* font-family: Orbitron;
     font-size: 2rem; */
     width: 100%;
+    /* background-color: lightblue; */
+    display: flex;
+    justify-content: space-between;
+    font-family: Orbitron;
+    font-size: 2rem;
+    color: var(--color-purple-50);
+    align-items: center;
+    padding: 20px 20px 0 20px;
   }
 
   #scoreboard {
-    color: var(--color-purple-50);
+    /* background-color: lightpink; */
+    /* color: var(--color-purple-50); */
     display:flex;
-    font-family: Orbitron;
-    font-size: 2rem;
-    justify-content: center;
-    padding-top: 16px;
+    /* font-family: Orbitron;
+    font-size: 2rem; */
+    /* justify-content: center; */
+    /* padding-top: 16px; */
   }
 
   #score{
     padding-left: 6px;
+  }
+
+  #seconds {
+    /* background-color: lightgreen; */
   }
 
   #toast {

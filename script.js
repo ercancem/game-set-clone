@@ -116,6 +116,7 @@ class Game {
 
     // Build an array of 81 cards.
     #deck = this.#buildDeck();
+    // second = 0;
 
     constructor() {
         // The UNIT is supposed to be the essential unit to build the
@@ -135,6 +136,7 @@ class Game {
         // bring in the cards that form a set. I leave that problem
         // for later.
         this.NUMBER_OF_TILES = 12;
+        // this.SECOND = 1;
 
         this.COLORS = ["color-one", "color-two", "color-three"];
         this.shuffledDeck = this.#shuffleDeck(this.#deck);
@@ -152,6 +154,7 @@ class Game {
         // this.selectedCards = [];
         // this.selectedCardsIndices = [];
         this.initilizeBoard();
+        // this.runTimer();
     }
 
 
@@ -321,33 +324,29 @@ class Game {
         return indexArray
     }
 
-    incSelectedTileCount() {
-        this.selectedTilesCount++;
-    }
-
-    decSelectedTileCount() {
-        this.selectedTilesCount--;
-    }
-
-    resetSelectedTilesCount() {
-        this.selectedTilesCount = 0;
-    }
-
-    isSelectedTileCountLimit() {
-        return this.selectedTilesCount === 3;
-    }
 
     incrementScore() {
         const score = document.getElementById("score").textContent
-        document.getElementById("score").textContent = parseInt(score) + 3;
+        document.getElementById("score").textContent = parseInt(score) + 30;
     }
+
+    updateScore() {
+        let score = parseInt(document.getElementById("score").textContent);
+        score--;
+        document.getElementById("score").textContent = score
+    }
+
+    runTimer() {
+        setInterval(this.updateScore, 1000);
+    }
+
 
 }
 
 createDomElements();
 activateTiles();
 activateSetButton();
-// createBoard();
+// createBoard();second
 const game = new Game();
 console.log("Set: " + game.getSet());
 
@@ -541,41 +540,14 @@ function handleSubmit() {
     }
     /* ---------------------------------------------------------------------- */
 
-    /* ------ We have a valid Set. First order of business: incScore() ------ */
+    /* ------ We have a valid Set. First order of business: SCORE ----------- */
     game.incrementScore();
     /* ---------------------------------------------------------------------- */
 
     /* -------------- Rebuild iCards; check whether it is empty ------------- */
     game.rebuildICards();
-    // console.log("iCards after rebuild:");
-    // console.table(game.iCards);
     iCards = game.iCards.length != 0;
     /* ---------------------------------------------------------------------- */
-
-
-    /* ------------------------ We have a valid Set. ------------------------ */
-    /*
-    From here on, we move with respect to whether there are more cards to come
-    and whether the remaining tiles on board include a Set.
-    (1) If iCards empty:
-        (a) and no Set in remaining tiles --> GameOver().
-        (b) but we have a Set --> keep playing without rebuilding the board.
-
-    (2) If iCards !empty:
-        (a) if we've a Set in the remaining tiles, just get 3 cards from iCards
-        (b) if not, check whether there is a Set at all. (Recall that if iCards
-            has 9 cards, then we are ensured a Set, else it is possible that
-            there is no Set.) If no Set --> GameOver()
-        (c) if there is a Set, get those 3 cards.
-            Side Note: It is BARELY possible that no two-card combination in
-            iCards make a Set, thus the 3 new cards form a Set. In such a case
-            perhaps it is better to shuffle the board; but I think that is a
-            bad idea for several reasons. Short of the long: just not worth it.
-
-    Let us know whether iCards is empty or not; and check whether the
-    remaining tiles have a Set and store those two Boolean values.
-    */
-    /* ----------------------------------------------------------------------- */
 
 
     /* -------------- Check if there is a Set in remaning tiles ------------- */
@@ -590,7 +562,6 @@ function handleSubmit() {
     for (let comb of rcCombGenerator) {
         if (game.isSet(comb)) {
             setFoundInRemainingTiles = true;
-            // console.log("comb: " + comb);
             break;
         }
     }
@@ -599,8 +570,13 @@ function handleSubmit() {
 
 
     /* ----------- If no more cards and no more Set --> GameOver() ---------- */
-    // TODO: we need to remove the last 3 tiles from last Set
     if (!iCards && !setFoundInRemainingTiles) {
+        selectedTiles.forEach(tile => {
+            tile.classList.add("fade-out");
+            setTimeout(() => {
+                removeAllChildNodes(tile);
+            }, 1500);
+        });
         gameOver();
         return;
     }
@@ -1002,8 +978,13 @@ function createTop() {
     const score = document.createElement("div");
     score.setAttribute("id", "score");
     score.classList.add("score");
-    score.textContent = "0";
+    score.textContent = "900";
     scoreboard.append(score);
+
+    // const seconds = document.createElement("div");
+    // seconds.setAttribute("id", "seconds");
+    // seconds.textContent = 0;
+    // topSection.append(seconds);
 
 }
 
@@ -1077,3 +1058,75 @@ function createFooter() {
     // score.textContent = "0";
     // scoreboard.append(score);
 }
+
+
+function createModal() {
+    const modalOverlay = document.createElement("div");
+    modalOverlay.setAttribute("id", "modal-overlay");
+    modalOverlay.classList.add("modal-show");
+    document.body.append(modalOverlay);
+    const modalContent = document.createElement("div");
+    modalContent.setAttribute("id", "modal-content");
+    modalContent.classList.add("modal-show");
+    modalOverlay.append(modalContent);
+
+    const header = document.createElement("h1");
+    header.setAttribute("id", "modal-header");
+    modalContent.append(header);
+    header.textContent = "How To Play";
+
+    const button = document.createElement("button");
+    button.setAttribute("id", "modal-button");
+    modalContent.append(button);
+    button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>';
+
+    button.addEventListener("click", () => {
+        modalContent.classList.add("modal-hide");
+        modalContent.classList.remove("modal-show");
+        modalOverlay.classList.add("modal-hide");
+        modalOverlay.classList.remove("modal-show");
+    })
+
+    const content = document.createElement("div");
+    content.setAttribute("id", "modal-content");
+    modalContent.append(content);
+
+    const contentSvgContainer = document.createElement("div");
+    contentSvgContainer.setAttribute("id", "modal-svg-container");
+    content.append(contentSvgContainer)
+
+
+
+
+}
+
+
+
+// createTile(boardIndex, card) {
+//     // Recall that card[2] represents the NUMBER of shapes;
+//     // thus we loop that many times to create that many shapes.
+//     for (let i = 0; i <= card[2]; i++) {
+//         const tile = document.getElementById("tile-no-" + boardIndex);
+//         tile.classList.add(this.COLORS[card[0]]);
+//         // The following data attribute is helpful when
+//         // constructing the set-array-list on board
+//         tile.dataset.card = card.join("");
+//         tile.dataset.state = "idle";
+//         let shape = document.createElement("div");
+//         shape.classList.add("svg-element")
+//         if (card[3] === 0) {
+//             renderCircle(shape, 12, this.COLORS[card[0]], card[1]);
+//             tile.append(shape);
+//             continue
+//         }
+//         if (card[3] === 1) {
+//             renderSquare(shape, 12, this.COLORS[card[0]], card[1]);
+//             tile.append(shape);
+//             continue
+//         }
+//         else {
+//             renderDiamond(shape, 12, this.COLORS[card[0]], card[1]);
+//             tile.append(shape);
+//         }
+//     }
+// }
